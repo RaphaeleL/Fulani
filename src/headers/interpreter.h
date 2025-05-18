@@ -15,6 +15,14 @@ typedef struct {
         int int_val;
         float float_val;
         char* string_val;
+        int bool_val;       // Boolean value (0 for false, 1 for true)
+        long long_val;      // Long integer value
+        double double_val;  // Double precision value
+        struct {
+            void** items;    // List items
+            int count;       // List size
+            DataType item_type; // Type of items in the list
+        } list_val;
         struct {
             FunctionStmt* declaration;
             Environment* closure;

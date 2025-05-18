@@ -204,6 +204,40 @@ static Token number(Lexer* lexer) {
 
 static TokenType identifier_type(Lexer* lexer) {
     switch (lexer->source[lexer->start]) {
+        case 'a': 
+            if (lexer->current - lexer->start == 3 &&
+                strncmp(lexer->source + lexer->start, "add", 3) == 0)
+                return TOKEN_ADD;
+            break;
+        case 'b': {
+            if (lexer->current - lexer->start > 1) {
+                switch (lexer->source[lexer->start + 1]) {
+                    case 'o':
+                        if (lexer->current - lexer->start == 4 &&
+                            strncmp(lexer->source + lexer->start + 2, "ol", 2) == 0) return TOKEN_BOOL;
+                        break;
+                }
+            }
+            break;
+        }
+        case 'd':
+            if (lexer->current - lexer->start == 6 &&
+                strncmp(lexer->source + lexer->start + 1, "ouble", 5) == 0)
+                return TOKEN_DOUBLE;
+            break;
+        case 'e':
+            if (lexer->current - lexer->start == 4 &&
+                strncmp(lexer->source + lexer->start + 1, "lse", 3) == 0)
+                return TOKEN_ELSE;
+            break;
+        case 'f':
+            if (lexer->current - lexer->start == 5 &&
+                strncmp(lexer->source + lexer->start + 1, "loat", 4) == 0)
+                return TOKEN_FLOAT;
+            else if (lexer->current - lexer->start == 3 &&
+                strncmp(lexer->source + lexer->start, "for", 3) == 0)
+                return TOKEN_FOR;
+            break;
         case 'i': {
             if (lexer->current - lexer->start > 1) {
                 switch (lexer->source[lexer->start + 1]) {
@@ -218,15 +252,24 @@ static TokenType identifier_type(Lexer* lexer) {
             }
             break;
         }
-        case 'e':
+        case 'l':
             if (lexer->current - lexer->start == 4 &&
-                strncmp(lexer->source + lexer->start + 1, "lse", 3) == 0)
-                return TOKEN_ELSE;
+                strncmp(lexer->source + lexer->start + 1, "ist", 3) == 0)
+                return TOKEN_LIST;
+            else if (lexer->current - lexer->start == 4 &&
+                strncmp(lexer->source + lexer->start + 1, "ong", 3) == 0)
+                return TOKEN_LONG;
+            else if (lexer->current - lexer->start == 6 &&
+                strncmp(lexer->source + lexer->start + 1, "ength", 5) == 0)
+                return TOKEN_LENGTH;
             break;
-        case 'f':
-            if (lexer->current - lexer->start == 5 &&
-                strncmp(lexer->source + lexer->start + 1, "loat", 4) == 0)
-                return TOKEN_FLOAT;
+        case 'r':
+            if (lexer->current - lexer->start == 6 &&
+                strncmp(lexer->source + lexer->start + 1, "eturn", 5) == 0)
+                return TOKEN_RETURN;
+            else if (lexer->current - lexer->start == 6 &&
+                strncmp(lexer->source + lexer->start + 1, "emove", 5) == 0)
+                return TOKEN_REMOVE;
             break;
         case 's':
             if (lexer->current - lexer->start == 6 &&
@@ -237,11 +280,6 @@ static TokenType identifier_type(Lexer* lexer) {
             if (lexer->current - lexer->start == 4 &&
                 strncmp(lexer->source + lexer->start + 1, "oid", 3) == 0)
                 return TOKEN_VOID;
-            break;
-        case 'r':
-            if (lexer->current - lexer->start == 6 &&
-                strncmp(lexer->source + lexer->start + 1, "eturn", 5) == 0)
-                return TOKEN_RETURN;
             break;
         case 'w':
             if (lexer->current - lexer->start == 5 &&
@@ -273,7 +311,19 @@ Token lexer_next_token(Lexer* lexer) {
     if (is_alpha(c)) {
         // Identifier
         while (is_alpha(peek(lexer)) || is_digit(peek(lexer))) advance(lexer);
-        return make_token(lexer, identifier_type(lexer));
+        
+        // Check for boolean literals
+        TokenType type = identifier_type(lexer);
+        
+        // Special handling for "true" and "false" boolean literals
+        if (type == TOKEN_IDENTIFIER) {
+            if (lexer->current - lexer->start == 4 && strncmp(lexer->source + lexer->start, "true", 4) == 0)
+                return make_token(lexer, TOKEN_BOOL_LITERAL);
+            else if (lexer->current - lexer->start == 5 && strncmp(lexer->source + lexer->start, "false", 5) == 0)
+                return make_token(lexer, TOKEN_BOOL_LITERAL);
+        }
+        
+        return make_token(lexer, type);
     }
     
     if (is_digit(c)) {
@@ -286,6 +336,8 @@ Token lexer_next_token(Lexer* lexer) {
         case ')': return make_token(lexer, TOKEN_RPAREN);
         case '{': return make_token(lexer, TOKEN_LBRACE);
         case '}': return make_token(lexer, TOKEN_RBRACE);
+        case '[': return make_token(lexer, TOKEN_LBRACKET);
+        case ']': return make_token(lexer, TOKEN_RBRACKET);
         case ';': return make_token(lexer, TOKEN_SEMICOLON);
         case ',': return make_token(lexer, TOKEN_COMMA);
         case '.': return make_token(lexer, TOKEN_DOT);

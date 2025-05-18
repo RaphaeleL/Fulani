@@ -6,6 +6,9 @@
 // Forward declarations
 static void execute_stmt(Interpreter* interpreter, Stmt* stmt, bool* early_return, Variable* return_value);
 
+// Forward declarations for print_value
+static void print_value(Variable arg);
+
 static Environment* create_environment(Environment* enclosing) {
     Environment* env = malloc(sizeof(Environment));
     env->enclosing = enclosing;
@@ -85,10 +88,28 @@ static void environment_assign(Environment* env, const char* name, Variable valu
 static void free_environment(Environment* env) {
     for (int i = 0; i < env->variable_count; i++) {
         free(env->variables[i].name);
-        if (env->variables[i].type == TYPE_STRING) {
-            free(env->variables[i].value.string_val);
+        
+        if (!env->variables[i].is_function) {
+            if (env->variables[i].type == TYPE_STRING) {
+                free(env->variables[i].value.string_val);
+            } else if (env->variables[i].type == TYPE_LIST) {
+                // Free all items in the list
+                for (int j = 0; j < env->variables[i].value.list_val.count; j++) {
+                    // For string items, we need to free the string content
+                    if (env->variables[i].value.list_val.item_type == TYPE_STRING) {
+                        free(env->variables[i].value.list_val.items[j]);
+                    } else {
+                        // For other types, we allocated memory for the value itself
+                        free(env->variables[i].value.list_val.items[j]);
+                    }
+                }
+                
+                // Free the array of item pointers
+                free(env->variables[i].value.list_val.items);
+            }
         }
     }
+    
     free(env->variables);
     free(env);
 }
@@ -112,6 +133,10 @@ static Variable evaluate_expr(Interpreter* interpreter, Expr* expr) {
                     result.type = TYPE_STRING;
                     result.value.string_val = strdup(token->lexeme);
                     break;
+                case TOKEN_BOOL_LITERAL:
+                    result.type = TYPE_BOOL;
+                    result.value.bool_val = (strcmp(token->lexeme, "true") == 0) ? 1 : 0;
+                    break;
                 default:
                     fprintf(stderr, "Invalid literal type: %d\n", token->type);
                     interpreter->had_error = true;
@@ -120,9 +145,139 @@ static Variable evaluate_expr(Interpreter* interpreter, Expr* expr) {
             break;
         }
         case EXPR_BINARY: {
+            // Special case for list index assignment
+            if (expr->as.binary.operator.type == TOKEN_ASSIGN && 
+                expr->as.binary.left->type == EXPR_LIST_ACCESS) {
+                
+                // Get the list variable
+                VariableExpr list_var = expr->as.binary.left->as.list_access.list->as.variable;
+                Variable* list_ptr = environment_get(interpreter->environment, list_var.name.lexeme);
+                
+                if (!list_ptr) {
+                    fprintf(stderr, "Undefined variable '%s'\n", list_var.name.lexeme);
+                    interpreter->had_error = true;
+                    result.type = TYPE_INT; // Default type for error recovery
+                    result.is_function = false;
+                    result.value.int_val = 0;
+                    break;
+                }
+                
+                // Get the index
+                Variable index = evaluate_expr(interpreter, expr->as.binary.left->as.list_access.index);
+                // Get the value to assign
+                Variable value = evaluate_expr(interpreter, expr->as.binary.right);
+                
+                // Check that we're working with a list
+                if (list_ptr->type != TYPE_LIST) {
+                    fprintf(stderr, "Cannot assign to index of non-list value\n");
+                    interpreter->had_error = true;
+                    break;
+                }
+                
+                // Check that the index is an integer
+                if (index.type != TYPE_INT) {
+                    fprintf(stderr, "List index must be an integer\n");
+                    interpreter->had_error = true;
+                    break;
+                }
+                
+                // Check that the index is in range
+                int idx = index.value.int_val;
+                if (idx < 0 || idx >= list_ptr->value.list_val.count) {
+                    fprintf(stderr, "List index out of bounds: %d (size: %d)\n", 
+                            idx, list_ptr->value.list_val.count);
+                    interpreter->had_error = true;
+                    break;
+                }
+                
+                // Check that the value type matches the list item type
+                if (value.type != list_ptr->value.list_val.item_type) {
+                    fprintf(stderr, "Cannot assign value of type %d to list of type %d\n", 
+                            value.type, list_ptr->value.list_val.item_type);
+                    interpreter->had_error = true;
+                    break;
+                }
+                
+                // Free the old item (if it's a string, we need to free the memory)
+                if (list_ptr->value.list_val.item_type == TYPE_STRING) {
+                    free(list_ptr->value.list_val.items[idx]);
+                } else {
+                    free(list_ptr->value.list_val.items[idx]);
+                }
+                
+                // Replace with the new value
+                switch (value.type) {
+                    case TYPE_INT: {
+                        int* new_item = malloc(sizeof(int));
+                        *new_item = value.value.int_val;
+                        list_ptr->value.list_val.items[idx] = new_item;
+                        break;
+                    }
+                    case TYPE_FLOAT: {
+                        float* new_item = malloc(sizeof(float));
+                        *new_item = value.value.float_val;
+                        list_ptr->value.list_val.items[idx] = new_item;
+                        break;
+                    }
+                    case TYPE_STRING: {
+                        list_ptr->value.list_val.items[idx] = strdup(value.value.string_val);
+                        break;
+                    }
+                    case TYPE_BOOL: {
+                        int* new_item = malloc(sizeof(int));
+                        *new_item = value.value.bool_val;
+                        list_ptr->value.list_val.items[idx] = new_item;
+                        break;
+                    }
+                    case TYPE_LONG: {
+                        long* new_item = malloc(sizeof(long));
+                        *new_item = value.value.long_val;
+                        list_ptr->value.list_val.items[idx] = new_item;
+                        break;
+                    }
+                    case TYPE_DOUBLE: {
+                        double* new_item = malloc(sizeof(double));
+                        *new_item = value.value.double_val;
+                        list_ptr->value.list_val.items[idx] = new_item;
+                        break;
+                    }
+                    default:
+                        fprintf(stderr, "Unsupported type for list assignment\n");
+                        interpreter->had_error = true;
+                        break;
+                }
+                
+                // Return the assigned value
+                result = value;
+                
+                break;
+            }
+            
+            // Regular binary expression
             Variable left = evaluate_expr(interpreter, expr->as.binary.left);
             Variable right = evaluate_expr(interpreter, expr->as.binary.right);
             
+            result.is_function = false;
+            
+            // Special handling for string concatenation
+            if (expr->as.binary.operator.type == TOKEN_PLUS && left.type == TYPE_STRING && right.type == TYPE_STRING) {
+                result.type = TYPE_STRING;
+                // Allocate enough space for both strings plus null terminator
+                size_t len1 = strlen(left.value.string_val);
+                size_t len2 = strlen(right.value.string_val);
+                result.value.string_val = malloc(len1 + len2 + 1);
+                
+                // Concatenate the strings
+                strcpy(result.value.string_val, left.value.string_val);
+                strcat(result.value.string_val, right.value.string_val);
+                
+                // Free the original strings
+                free(left.value.string_val);
+                free(right.value.string_val);
+                break;
+            }
+            
+            // Regular numeric operations
             if (left.type != right.type) {
                 fprintf(stderr, "Operands must be of the same type\n");
                 interpreter->had_error = true;
@@ -130,7 +285,6 @@ static Variable evaluate_expr(Interpreter* interpreter, Expr* expr) {
             }
             
             result.type = TYPE_INT;  // All comparison operators return int (boolean)
-            result.is_function = false;
             
             switch (expr->as.binary.operator.type) {
                 case TOKEN_PLUS:
@@ -139,6 +293,10 @@ static Variable evaluate_expr(Interpreter* interpreter, Expr* expr) {
                         result.value.int_val = left.value.int_val + right.value.int_val;
                     else if (left.type == TYPE_FLOAT)
                         result.value.float_val = left.value.float_val + right.value.float_val;
+                    else if (left.type == TYPE_LONG)
+                        result.value.int_val = left.value.int_val + right.value.int_val; // Using int_val for longs too
+                    else if (left.type == TYPE_DOUBLE)
+                        result.value.float_val = left.value.float_val + right.value.float_val; // Using float_val for doubles too
                     break;
                 case TOKEN_MINUS:
                     result.type = left.type;
@@ -286,19 +444,7 @@ static Variable evaluate_expr(Interpreter* interpreter, Expr* expr) {
                 // Handle built-in println function
                 for (int i = 0; i < expr->as.call.arg_count; i++) {
                     Variable arg = evaluate_expr(interpreter, expr->as.call.arguments[i]);
-                    switch (arg.type) {
-                        case TYPE_INT:
-                            printf("%d", arg.value.int_val);
-                            break;
-                        case TYPE_FLOAT:
-                            printf("%f", arg.value.float_val);
-                            break;
-                        case TYPE_STRING:
-                            printf("%s", arg.value.string_val);
-                            break;
-                        default:
-                            break;
-                    }
+                    print_value(arg);
                     if (i < expr->as.call.arg_count - 1) {
                         printf(" ");
                     }
@@ -310,19 +456,7 @@ static Variable evaluate_expr(Interpreter* interpreter, Expr* expr) {
                 // Handle built-in print function (like println but without newline)
                 for (int i = 0; i < expr->as.call.arg_count; i++) {
                     Variable arg = evaluate_expr(interpreter, expr->as.call.arguments[i]);
-                    switch (arg.type) {
-                        case TYPE_INT:
-                            printf("%d", arg.value.int_val);
-                            break;
-                        case TYPE_FLOAT:
-                            printf("%f", arg.value.float_val);
-                            break;
-                        case TYPE_STRING:
-                            printf("%s", arg.value.string_val);
-                            break;
-                        default:
-                            break;
-                    }
+                    print_value(arg);
                     if (i < expr->as.call.arg_count - 1) {
                         printf(" ");
                     }
@@ -391,6 +525,15 @@ static Variable evaluate_expr(Interpreter* interpreter, Expr* expr) {
                         result.value.float_val = 0.0;
                     } else if (func->return_type == TYPE_STRING) {
                         result.value.string_val = strdup("");
+                    } else if (func->return_type == TYPE_BOOL) {
+                        result.value.bool_val = 0; // Default to false
+                    } else if (func->return_type == TYPE_LONG) {
+                        result.value.long_val = 0L;
+                    } else if (func->return_type == TYPE_DOUBLE) {
+                        result.value.double_val = 0.0;
+                    } else if (func->return_type == TYPE_LIST) {
+                        result.value.list_val.items = NULL;
+                        result.value.list_val.count = 0;
                     }
                 }
                 
@@ -402,9 +545,314 @@ static Variable evaluate_expr(Interpreter* interpreter, Expr* expr) {
             }
             break;
         }
+        case EXPR_LIST_ACCESS: {
+            // Get the list variable
+            VariableExpr list_var = expr->as.list_access.list->as.variable;
+            Variable* list_ptr = environment_get(interpreter->environment, list_var.name.lexeme);
+            
+            if (!list_ptr) {
+                fprintf(stderr, "Undefined variable '%s'\n", list_var.name.lexeme);
+                interpreter->had_error = true;
+                result.type = TYPE_INT; // Default type for error recovery
+                result.is_function = false;
+                result.value.int_val = 0;
+                break;
+            }
+            
+            if (list_ptr->type != TYPE_LIST) {
+                fprintf(stderr, "Cannot access index on a non-list value\n");
+                interpreter->had_error = true;
+                result.type = TYPE_INT; // Default type for error recovery
+                result.is_function = false;
+                result.value.int_val = 0;
+                break;
+            }
+            
+            Variable index = evaluate_expr(interpreter, expr->as.list_access.index);
+            
+            if (index.type != TYPE_INT) {
+                fprintf(stderr, "List index must be an integer\n");
+                interpreter->had_error = true;
+                result.type = TYPE_INT; // Default type for error recovery
+                result.is_function = false;
+                result.value.int_val = 0;
+                break;
+            }
+            
+            int idx = index.value.int_val;
+            if (idx < 0 || idx >= list_ptr->value.list_val.count) {
+                fprintf(stderr, "List index out of bounds: %d (size: %d)\n", 
+                        idx, list_ptr->value.list_val.count);
+                interpreter->had_error = true;
+                result.type = TYPE_INT; // Default type for error recovery
+                result.is_function = false;
+                result.value.int_val = 0;
+                break;
+            }
+            
+            // Get the value at the specified index
+            void* item = list_ptr->value.list_val.items[idx];
+            result.type = list_ptr->value.list_val.item_type;
+            result.is_function = false;
+            
+            // Copy the value based on its type
+            switch (result.type) {
+                case TYPE_INT:
+                    result.value.int_val = *((int*)item);
+                    break;
+                case TYPE_FLOAT:
+                    result.value.float_val = *((float*)item);
+                    break;
+                case TYPE_STRING:
+                    result.value.string_val = strdup((char*)item);
+                    break;
+                case TYPE_BOOL:
+                    result.value.bool_val = *((int*)item);
+                    break;
+                case TYPE_LONG:
+                    result.value.long_val = *((long*)item);
+                    break;
+                case TYPE_DOUBLE:
+                    result.value.double_val = *((double*)item);
+                    break;
+                default:
+                    fprintf(stderr, "Unsupported list item type\n");
+                    interpreter->had_error = true;
+                    break;
+            }
+            break;
+        }
+        case EXPR_LIST_METHOD: {
+            // Get the list variable
+            VariableExpr list_var = expr->as.list_method.list->as.variable;
+            Variable* list_ptr = environment_get(interpreter->environment, list_var.name.lexeme);
+            
+            if (!list_ptr) {
+                fprintf(stderr, "Undefined variable '%s'\n", list_var.name.lexeme);
+                interpreter->had_error = true;
+                result.type = TYPE_VOID;
+                result.is_function = false;
+                break;
+            }
+            
+            if (list_ptr->type != TYPE_LIST) {
+                fprintf(stderr, "Cannot call method on a non-list value\n");
+                interpreter->had_error = true;
+                result.type = TYPE_VOID;
+                result.is_function = false;
+                break;
+            }
+            
+            if (expr->as.list_method.method == TOKEN_ADD) {
+                // Evaluate the argument to add
+                Variable item = evaluate_expr(interpreter, expr->as.list_method.argument);
+                
+                // If this is the first item, set the item type
+                if (list_ptr->value.list_val.count == 0) {
+                    list_ptr->value.list_val.item_type = item.type;
+                }
+                
+                // Check that the new item matches the existing list type
+                if (item.type != list_ptr->value.list_val.item_type) {
+                    fprintf(stderr, "Cannot add item of type %d to list of type %d\n", 
+                            item.type, list_ptr->value.list_val.item_type);
+                    interpreter->had_error = true;
+                    result.type = TYPE_VOID;
+                    result.is_function = false;
+                    break;
+                }
+                
+                // Allocate memory for the new item based on its type
+                void* new_item = NULL;
+                switch (item.type) {
+                    case TYPE_INT: {
+                        int* int_item = malloc(sizeof(int));
+                        *int_item = item.value.int_val;
+                        new_item = int_item;
+                        break;
+                    }
+                    case TYPE_FLOAT: {
+                        float* float_item = malloc(sizeof(float));
+                        *float_item = item.value.float_val;
+                        new_item = float_item;
+                        break;
+                    }
+                    case TYPE_STRING: {
+                        new_item = strdup(item.value.string_val);
+                        break;
+                    }
+                    case TYPE_BOOL: {
+                        int* bool_item = malloc(sizeof(int));
+                        *bool_item = item.value.bool_val;
+                        new_item = bool_item;
+                        break;
+                    }
+                    case TYPE_LONG: {
+                        long* long_item = malloc(sizeof(long));
+                        *long_item = item.value.long_val;
+                        new_item = long_item;
+                        break;
+                    }
+                    case TYPE_DOUBLE: {
+                        double* double_item = malloc(sizeof(double));
+                        *double_item = item.value.double_val;
+                        new_item = double_item;
+                        break;
+                    }
+                    default:
+                        fprintf(stderr, "Unsupported item type for list.add\n");
+                        interpreter->had_error = true;
+                        break;
+                }
+                
+                // Add the item to the list
+                list_ptr->value.list_val.items = realloc(list_ptr->value.list_val.items, 
+                                                    sizeof(void*) * (list_ptr->value.list_val.count + 1));
+                list_ptr->value.list_val.items[list_ptr->value.list_val.count] = new_item;
+                list_ptr->value.list_val.count++;
+                
+                // Return void (the add method doesn't return a value)
+                result.type = TYPE_VOID;
+                result.is_function = false;
+            }
+            else if (expr->as.list_method.method == TOKEN_REMOVE) {
+                // Evaluate the index to remove
+                Variable index = evaluate_expr(interpreter, expr->as.list_method.argument);
+                
+                if (index.type != TYPE_INT) {
+                    fprintf(stderr, "List index must be an integer\n");
+                    interpreter->had_error = true;
+                    result.type = TYPE_VOID;
+                    result.is_function = false;
+                    break;
+                }
+                
+                int idx = index.value.int_val;
+                if (idx < 0 || idx >= list_ptr->value.list_val.count) {
+                    fprintf(stderr, "List index out of bounds: %d (size: %d)\n", 
+                            idx, list_ptr->value.list_val.count);
+                    interpreter->had_error = true;
+                    result.type = TYPE_VOID;
+                    result.is_function = false;
+                    break;
+                }
+                
+                // Free the memory for the item being removed
+                if (list_ptr->value.list_val.item_type == TYPE_STRING) {
+                    free(list_ptr->value.list_val.items[idx]);
+                } else {
+                    free(list_ptr->value.list_val.items[idx]);
+                }
+                
+                // Shift all remaining elements down
+                for (int i = idx; i < list_ptr->value.list_val.count - 1; i++) {
+                    list_ptr->value.list_val.items[i] = list_ptr->value.list_val.items[i + 1];
+                }
+                
+                // Shrink the list size
+                list_ptr->value.list_val.count--;
+                
+                // Return void (the remove method doesn't return a value)
+                result.type = TYPE_VOID;
+                result.is_function = false;
+            }
+            break;
+        }
+        case EXPR_LIST_PROPERTY: {
+            // Get the list variable
+            VariableExpr list_var = expr->as.list_property.list->as.variable;
+            Variable* list_ptr = environment_get(interpreter->environment, list_var.name.lexeme);
+            
+            if (!list_ptr) {
+                fprintf(stderr, "Undefined variable '%s'\n", list_var.name.lexeme);
+                interpreter->had_error = true;
+                result.type = TYPE_INT; // Default type for error recovery
+                result.is_function = false;
+                result.value.int_val = 0;
+                break;
+            }
+            
+            if (list_ptr->type != TYPE_LIST) {
+                fprintf(stderr, "Cannot access property on a non-list value\n");
+                interpreter->had_error = true;
+                result.type = TYPE_INT; // Default type for error recovery
+                result.is_function = false;
+                result.value.int_val = 0;
+                break;
+            }
+            
+            if (expr->as.list_property.property == TOKEN_LENGTH) {
+                // Return the length of the list
+                result.type = TYPE_INT;
+                result.is_function = false;
+                result.value.int_val = list_ptr->value.list_val.count;
+            }
+            break;
+        }
     }
     
     return result;
+}
+
+static void print_value(Variable arg) {
+    switch (arg.type) {
+        case TYPE_INT:
+            printf("%d", arg.value.int_val);
+            break;
+        case TYPE_FLOAT:
+            printf("%f", arg.value.float_val);
+            break;
+        case TYPE_STRING:
+            printf("%s", arg.value.string_val);
+            break;
+        case TYPE_BOOL:
+            printf("%s", arg.value.bool_val ? "true" : "false");
+            break;
+        case TYPE_LONG:
+            printf("%ld", arg.value.long_val);
+            break;
+        case TYPE_DOUBLE:
+            printf("%lf", arg.value.double_val);
+            break;
+        case TYPE_LIST:
+            printf("[");
+            for (int j = 0; j < arg.value.list_val.count; j++) {
+                void* item = arg.value.list_val.items[j];
+                
+                // Print the item based on its type
+                switch (arg.value.list_val.item_type) {
+                    case TYPE_INT:
+                        printf("%d", *((int*)item));
+                        break;
+                    case TYPE_FLOAT:
+                        printf("%f", *((float*)item));
+                        break;
+                    case TYPE_STRING:
+                        printf("\"%s\"", (char*)item);
+                        break;
+                    case TYPE_BOOL:
+                        printf("%s", (*((int*)item)) ? "true" : "false");
+                        break;
+                    case TYPE_LONG:
+                        printf("%ld", *((long*)item));
+                        break;
+                    case TYPE_DOUBLE:
+                        printf("%lf", *((double*)item));
+                        break;
+                    default:
+                        printf("?");
+                        break;
+                }
+                
+                if (j < arg.value.list_val.count - 1) {
+                    printf(", ");
+                }
+            }
+            printf("]");
+            break;
+        default:
+            break;
+    }
 }
 
 static void execute_stmt(Interpreter* interpreter, Stmt* stmt, bool* early_return, Variable* return_value) {
@@ -424,12 +872,32 @@ static void execute_stmt(Interpreter* interpreter, Stmt* stmt, bool* early_retur
             
             if (stmt->as.var_decl.initializer != NULL) {
                 Variable init = evaluate_expr(interpreter, stmt->as.var_decl.initializer);
-                if (init.type != var.type) {
+                
+                // Special case: implicit int->bool conversion for boolean variables
+                if (var.type == TYPE_BOOL && init.type == TYPE_INT) {
+                    var.value.bool_val = init.value.int_val ? 1 : 0;
+                }
+                // Special case: int->long conversion
+                else if (var.type == TYPE_LONG && init.type == TYPE_INT) {
+                    var.value.long_val = (long)init.value.int_val;
+                }
+                // Special case: float->double conversion
+                else if (var.type == TYPE_DOUBLE && init.type == TYPE_FLOAT) {
+                    var.value.double_val = (double)init.value.float_val;
+                }
+                // Regular case: types match
+                else if (init.type == var.type) {
+                    if (var.type == TYPE_STRING) {
+                        var.value.string_val = strdup(init.value.string_val);
+                        free(init.value.string_val);
+                    } else {
+                        var.value = init.value;
+                    }
+                } else {
                     fprintf(stderr, "Type mismatch in variable initialization\n");
                     interpreter->had_error = true;
                     return;
                 }
-                var.value = init.value;
             } else {
                 // Initialize with default values
                 switch (var.type) {
@@ -441,6 +909,19 @@ static void execute_stmt(Interpreter* interpreter, Stmt* stmt, bool* early_retur
                         break;
                     case TYPE_STRING:
                         var.value.string_val = strdup("");
+                        break;
+                    case TYPE_BOOL:
+                        var.value.bool_val = 0; // false
+                        break;
+                    case TYPE_LONG:
+                        var.value.long_val = 0L;
+                        break;
+                    case TYPE_DOUBLE:
+                        var.value.double_val = 0.0;
+                        break;
+                    case TYPE_LIST:
+                        var.value.list_val.items = NULL;
+                        var.value.list_val.count = 0;
                         break;
                     default:
                         break;
@@ -469,13 +950,17 @@ static void execute_stmt(Interpreter* interpreter, Stmt* stmt, bool* early_retur
         }
         case STMT_IF: {
             Variable condition = evaluate_expr(interpreter, stmt->as.if_stmt.condition);
-            if (condition.type != TYPE_INT) {
-                fprintf(stderr, "Condition must be an integer\n");
+            if (condition.type != TYPE_INT && condition.type != TYPE_BOOL) {
+                fprintf(stderr, "Condition must be an integer or boolean\n");
                 interpreter->had_error = true;
                 return;
             }
             
-            if (condition.value.int_val) {
+            bool is_true = (condition.type == TYPE_BOOL) 
+                           ? condition.value.bool_val 
+                           : condition.value.int_val != 0;
+            
+            if (is_true) {
                 execute_stmt(interpreter, stmt->as.if_stmt.then_branch, early_return, return_value);
             } else if (stmt->as.if_stmt.else_branch != NULL) {
                 execute_stmt(interpreter, stmt->as.if_stmt.else_branch, early_return, return_value);
@@ -485,17 +970,70 @@ static void execute_stmt(Interpreter* interpreter, Stmt* stmt, bool* early_retur
         case STMT_WHILE: {
             for (;;) {
                 Variable condition = evaluate_expr(interpreter, stmt->as.while_stmt.condition);
-                if (condition.type != TYPE_INT) {
-                    fprintf(stderr, "Condition must be an integer\n");
+                if (condition.type != TYPE_INT && condition.type != TYPE_BOOL) {
+                    fprintf(stderr, "Condition must be an integer or boolean\n");
                     interpreter->had_error = true;
                     return;
                 }
                 
-                if (!condition.value.int_val) break;
+                bool is_true = (condition.type == TYPE_BOOL) 
+                               ? condition.value.bool_val 
+                               : condition.value.int_val != 0;
+                if (!is_true) break;
                 
                 execute_stmt(interpreter, stmt->as.while_stmt.body, early_return, return_value);
                 if (*early_return) break;  // Exit the loop early if we've returned
             }
+            break;
+        }
+        case STMT_FOR: {
+            // Create a new environment for the for loop (for variable scope)
+            Environment* previous = interpreter->environment;
+            interpreter->environment = create_environment(previous);
+            
+            // Execute the initialization once
+            if (stmt->as.for_stmt.init != NULL) {
+                execute_stmt(interpreter, stmt->as.for_stmt.init, early_return, return_value);
+                if (*early_return) {
+                    interpreter->environment = previous;
+                    return;
+                }
+            }
+            
+            // Execute the condition-body-increment loop
+            while (true) {
+                // Check condition (if any)
+                if (stmt->as.for_stmt.condition != NULL) {
+                    Variable condition = evaluate_expr(interpreter, stmt->as.for_stmt.condition);
+                    if (condition.type != TYPE_INT && condition.type != TYPE_BOOL) {
+                        fprintf(stderr, "For loop condition must be an integer or boolean\n");
+                        interpreter->had_error = true;
+                        interpreter->environment = previous;
+                        return;
+                    }
+                    
+                    // Exit if condition is false
+                    bool is_true = (condition.type == TYPE_BOOL) 
+                                   ? condition.value.bool_val 
+                                   : condition.value.int_val != 0;
+                    if (!is_true) break;
+                }
+                
+                // Execute body
+                execute_stmt(interpreter, stmt->as.for_stmt.body, early_return, return_value);
+                if (*early_return) {
+                    interpreter->environment = previous;
+                    return;
+                }
+                
+                // Execute increment (if any)
+                if (stmt->as.for_stmt.increment != NULL) {
+                    evaluate_expr(interpreter, stmt->as.for_stmt.increment);
+                }
+            }
+            
+            // Restore the previous environment
+            interpreter->environment = previous;
             break;
         }
         case STMT_FUNCTION: {

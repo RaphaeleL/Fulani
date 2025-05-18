@@ -1,0 +1,71 @@
+int foo(int a, int b) {
+    return a + b;
+}
+
+float bar(float a, float b) {
+    return a + b;
+}
+
+// Function to check if a number is positive using boolean return
+bool is_positive(int num) {
+    return num > 0;
+}
+
+// Function to demonstrate string concatenation
+string concat_strings(string a, string b) {
+    return a + b;
+}
+
+void main() {
+    // Original types
+    int a = 10;
+    float b = 1.0;
+    string c = "foo";
+    float d = 1.5;
+    
+    // New types
+    bool is_valid = true;
+    bool is_complete = false;
+    long large_num = 9223372036854775807;  // Very large integer
+    double precise_num = 3.141592653589793;
+    
+    // Original type examples
+    println("--- Original Types ---");
+    println("Integer: ", a);
+    println("Float: ", b);
+    println("String: ", c);
+    println("Float calculation: ", d + b);
+    
+    // Boolean examples
+    println();
+    println("--- Boolean Type ---");
+    println("Boolean value: ", is_valid);
+    println("Another boolean: ", is_complete);
+    println("Boolean expression: ", a > 5);
+    println("Function with boolean return: ", is_positive(a));
+    println("Function with negative input: ", is_positive(-3));
+    
+    // Long example
+    println();
+    println("--- Long Type ---");
+    println("Long integer: ", large_num);
+    
+    // Double example
+    println();
+    println("--- Double Type ---");
+    println("Double precision: ", precise_num);
+    
+    // String concatenation example
+    println();
+    println("--- String Operations ---");
+    string greeting = "Hello";
+    string name = "World";
+    println("Concatenation: ", greeting + " " + name);
+    println("Function result: ", concat_strings("Fulani ", "Language"));
+    
+    // Original function calls
+    println();
+    println("--- Function Calls ---");
+    println("foo(1, 2): ", foo(1, 2));
+    println("bar(1.0, 2.5): ", bar(1.0, 2.5));
+}

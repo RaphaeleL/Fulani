@@ -1,0 +1,66 @@
+// Demonstration of the list data type and operations
+
+void main() {
+    // Create an empty list
+    list numbers;
+    
+    println("List Example");
+    println("------------");
+    
+    // Check initial list length
+    println("Initial list length: ", numbers.length);
+    println("Initial list content: ", numbers);
+    
+    // Add elements to the list
+    numbers.add(10);
+    numbers.add(20);
+    numbers.add(30);
+    
+    // Print the list after adding elements
+    println();
+    println("After adding elements:");
+    println("List length: ", numbers.length);
+    println("List content: ", numbers);
+    
+    // Access elements by index
+    println();
+    println("Accessing elements by index:");
+    println("First element (index 0): ", numbers[0]);
+    println("Second element (index 1): ", numbers[1]);
+    println("Third element (index 2): ", numbers[2]);
+    
+    // Modify an element
+    numbers[1] = 25;
+    println();
+    println("After modifying the second element:");
+    println("List content: ", numbers);
+    
+    // Remove an element
+    numbers.remove(0);
+    println();
+    println("After removing the first element:");
+    println("List length: ", numbers.length);
+    println("List content: ", numbers);
+    
+    // Create a list of strings
+    list names;
+    names.add("Alice");
+    names.add("Bob");
+    names.add("Charlie");
+    
+    println();
+    println("List of strings:");
+    println("Length: ", names.length);
+    println("Content: ", names);
+    
+    // Create a list of booleans
+    list flags;
+    flags.add(true);
+    flags.add(false);
+    flags.add(true);
+    
+    println();
+    println("List of booleans:");
+    println("Length: ", flags.length);
+    println("Content: ", flags);
+} 

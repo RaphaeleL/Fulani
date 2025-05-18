@@ -1,0 +1,9 @@
+// Example of using boolean values
+void main() {
+  bool debug = true;  // Using proper boolean type
+  if (debug) {
+    println("Debug mode is enabled");
+  } else {
+    println("Debug mode is disabled");
+  }
+} 

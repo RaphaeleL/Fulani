@@ -1,0 +1,52 @@
+// Demonstration of for loops in Fulani
+
+void main() {
+    println("For Loop Examples");
+    println("-----------------");
+    
+    // Basic for loop with counter
+    println("1. Simple counting loop:");
+    for (int i = 0; i < 5; i = i + 1) {
+        println("  Counter: ", i);
+    }
+    
+    // For loop with list operations
+    println("2. Populating a list with for loop:");
+    list numbers;
+    for (int i = 1; i <= 5; i = i + 1) {
+        numbers.add(i * i);
+    }
+    println("  Square numbers: ", numbers);
+    
+    // Iterating through a list
+    println("3. Iterating through a list:");
+    list names;
+    names.add("Alice");
+    names.add("Bob");
+    names.add("Charlie");
+    
+    for (int i = 0; i < names.length; i = i + 1) {
+        println("  Name at index ", i, ": ", names[i]);
+    }
+    
+    // Nested for loops - triangle pattern
+    println("4. Nested for loops (triangle pattern):");
+    for (int i = 1; i <= 5; i = i + 1) {
+        print("  "); // Indent
+        for (int j = 1; j <= i; j = j + 1) {
+            print("* ");
+        }
+        println(); // End the line
+    }
+    
+    // Conditional exit in a for loop
+    println("5. For loop with conditional exit:");
+    for (int i = 0; i < 20; i = i + 1) {
+        if (i > 10) {
+            println("  Reached i = ", i, ", exiting loop");
+            i = 100; // Force exit
+        } else {
+            println("  Value: ", i);
+        }
+    }
+} 

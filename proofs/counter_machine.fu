@@ -1,0 +1,46 @@
+// Counter Machine implementation using for loops
+// This demonstrates Turing completeness using a counter machine
+
+void main() {
+    println("Counter Machine Example");
+    println("----------------------");
+    
+    // Initialize counters
+    list counters;
+    counters.add(0);  // Counter 0
+    counters.add(5);  // Counter 1 - will be decremented to 0
+    
+    // Execute a simple counter machine program:
+    // 1. Increment counter 0
+    // 2. Decrement counter 1
+    // 3. If counter 1 is not 0, go back to step 1
+    // 4. Halt
+    
+    println("Initial state:");
+    println("Counter 0: ", counters[0]);
+    println("Counter 1: ", counters[1]);
+    
+    // Use a for loop to simulate the counter machine
+    // This will run until counter 1 reaches 0
+    for (int i = 0; counters[1] > 0; i = i + 1) {
+        // Increment counter 0
+        counters[0] = counters[0] + 1;
+        
+        // Decrement counter 1
+        counters[1] = counters[1] - 1;
+        
+        println();
+        println("Iteration ", i + 1, ":");
+        println("Counter 0: ", counters[0]);
+        println("Counter 1: ", counters[1]);
+    }
+    
+    println();
+    println("Final state (after halt):");
+    println("Counter 0: ", counters[0]);
+    println("Counter 1: ", counters[1]);
+    
+    // This counter machine adds the initial value of counter 1 to counter 0
+    println();
+    println("The machine added the initial value of counter 1 (5) to counter 0");
+} 

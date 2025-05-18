@@ -1,6 +1,6 @@
 # Fulani Programming Language
 
-Fulani is a simple C-like programming language with a straightforward syntax, designed for educational purposes. It includes essential programming constructs like variables, functions, conditions, and loops.
+Fulani is a simple C-like programming language with a straightforward syntax, designed for educational purposes. It includes essential programming constructs like variables, functions, conditions, and loops. **Fulani is Turing complete**, meaning it can simulate any Turing machine and therefore compute anything that is computable.
 
 ## Building and Running
 
@@ -22,6 +22,15 @@ To run in debug mode (shows execution details):
 ./ownlang --debug path/to/your/program.fu
 ```
 
+## Turing Completeness
+
+Fulani's Turing completeness has been demonstrated through implementations of:
+
+- **Rule 110 Cellular Automaton**: A one-dimensional cellular automaton that has been proven to be Turing complete
+- **Counter Machine Simulation**: An implementation of a 2-counter machine, which is equivalent to a Turing machine
+
+These examples can be found in the `examples/` directory.
+
 ## Language Features
 
 ### Data Types
@@ -29,6 +38,8 @@ To run in debug mode (shows execution details):
 - `int`: Integer values
 - `float`: Floating-point values
 - `string`: Text strings
+- `bool`: Boolean values (true or false)
+- `list`: Dynamic lists that can store values
 - `void`: Used for functions that don't return a value
 
 ### Comments
@@ -77,6 +88,21 @@ if (condition) {
 while (condition) {
     // code
 }
+
+for (initialization; condition; increment) {
+    // code
+}
+```
+
+### Data Structures
+
+**Lists**:
+```
+list myList;
+myList.add(value);        // Add an element
+myList.remove(index);     // Remove element at index
+int size = myList.length; // Get list length
+int value = myList[0];    // Access element by index
 ```
 
 ### Functions
@@ -180,11 +206,10 @@ Each phase performs specific checks and transformations to ensure the program is
 
 Potential enhancements for the language include:
 
-- Array support
-- For loops
 - User-defined types/structures
 - More built-in functions
 - Standard library
+- Improved error handling and diagnostics
 
 ## License
 

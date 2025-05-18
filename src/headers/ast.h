@@ -8,7 +8,11 @@ typedef enum {
     TYPE_INT,
     TYPE_FLOAT,
     TYPE_STRING,
-    TYPE_VOID
+    TYPE_VOID,
+    TYPE_BOOL,    // Boolean type
+    TYPE_LIST,    // List type
+    TYPE_DOUBLE,  // Double type
+    TYPE_LONG     // Long type
 } DataType;
 
 typedef enum {
@@ -17,7 +21,10 @@ typedef enum {
     EXPR_LITERAL,
     EXPR_VARIABLE,
     EXPR_CALL,
-    EXPR_ASSIGN
+    EXPR_ASSIGN,
+    EXPR_LIST_ACCESS,     // For list[index]
+    EXPR_LIST_METHOD,     // For list.add(item) or list.remove(index)
+    EXPR_LIST_PROPERTY    // For list.length
 } ExprType;
 
 typedef enum {
@@ -26,6 +33,7 @@ typedef enum {
     STMT_BLOCK,
     STMT_IF,
     STMT_WHILE,
+    STMT_FOR,
     STMT_RETURN,
     STMT_FUNCTION
 } StmtType;
@@ -66,6 +74,25 @@ typedef struct {
     Expr* value;
 } AssignExpr;
 
+// New list access expression (list[index])
+typedef struct {
+    Expr* list;
+    Expr* index;
+} ListAccessExpr;
+
+// New list method expression (list.add(item) or list.remove(index))
+typedef struct {
+    Expr* list;
+    TokenType method;
+    Expr* argument;
+} ListMethodExpr;
+
+// New list property expression (list.length)
+typedef struct {
+    Expr* list;
+    TokenType property;
+} ListPropertyExpr;
+
 struct Expr {
     ExprType type;
     union {
@@ -75,6 +102,9 @@ struct Expr {
         LiteralExpr literal;
         CallExpr call;
         AssignExpr assign;
+        ListAccessExpr list_access;
+        ListMethodExpr list_method;
+        ListPropertyExpr list_property;
     } as;
 };
 
@@ -106,6 +136,13 @@ typedef struct {
 } WhileStmt;
 
 typedef struct {
+    Stmt* init;        // Initialization (var declaration or expression)
+    Expr* condition;   // Loop condition
+    Expr* increment;   // Increment expression
+    Stmt* body;        // Loop body
+} ForStmt;
+
+typedef struct {
     Stmt** statements;
     int count;
 } BlockStmt;
@@ -122,6 +159,7 @@ struct Stmt {
         BlockStmt block;
         IfStmt if_stmt;
         WhileStmt while_stmt;
+        ForStmt for_stmt;
         ReturnStmt return_stmt;
         FunctionStmt function;
     } as;
@@ -134,12 +172,16 @@ Expr* create_literal_expr(Token* value);
 Expr* create_variable_expr(Token name, DataType type);
 Expr* create_call_expr(Expr* callee, Expr** arguments, int arg_count);
 Expr* create_assign_expr(Token name, Expr* value);
+Expr* create_list_access_expr(Expr* list, Expr* index);
+Expr* create_list_method_expr(Expr* list, TokenType method, Expr* argument);
+Expr* create_list_property_expr(Expr* list, TokenType property);
 
 Stmt* create_expression_stmt(Expr* expression);
 Stmt* create_var_decl_stmt(Token name, DataType type, Expr* initializer);
 Stmt* create_block_stmt(Stmt** statements, int count);
 Stmt* create_if_stmt(Expr* condition, Stmt* then_branch, Stmt* else_branch);
 Stmt* create_while_stmt(Expr* condition, Stmt* body);
+Stmt* create_for_stmt(Stmt* init, Expr* condition, Expr* increment, Stmt* body);
 Stmt* create_return_stmt(Expr* expression);
 Stmt* create_function_stmt(Token name, DataType return_type, Token* params, DataType* param_types, int param_count, Stmt* body);
 

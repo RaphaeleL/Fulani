@@ -1,0 +1,10 @@
+// Simple for loop example
+
+void main() {
+    println("Simple for loop test");
+    
+    // Basic for loop
+    for (int i = 0; i < 5; i = i + 1) {
+        println("Counter: ", i);
+    }
+} 

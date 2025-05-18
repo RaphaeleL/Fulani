@@ -64,15 +64,9 @@ void print_expr(Expr* expr, int indent) {
     }
     
     switch (expr->type) {
-        case EXPR_LITERAL: {
-            Token* token = expr->as.literal.value;
-            print_indent(indent);
-            printf("Literal(%s): %s\n", token_type_to_string(token->type), token->lexeme);
-            break;
-        }
         case EXPR_BINARY: {
             print_indent(indent);
-            printf("Binary(%s):\n", token_type_to_string(expr->as.binary.operator.type));
+            printf("Binary(%s):\n", expr->as.binary.operator.lexeme);
             print_indent(indent + 1);
             printf("Left:\n");
             print_expr(expr->as.binary.left, indent + 2);
@@ -83,24 +77,24 @@ void print_expr(Expr* expr, int indent) {
         }
         case EXPR_UNARY: {
             print_indent(indent);
-            printf("Unary(%s):\n", token_type_to_string(expr->as.unary.operator.type));
-            print_indent(indent + 1);
-            printf("Operand:\n");
-            print_expr(expr->as.unary.operand, indent + 2);
+            printf("Unary(%s):\n", expr->as.unary.operator.lexeme);
+            print_expr(expr->as.unary.operand, indent + 1);
+            break;
+        }
+        case EXPR_LITERAL: {
+            print_indent(indent);
+            printf("Literal(%s)\n", expr->as.literal.value->lexeme);
             break;
         }
         case EXPR_VARIABLE: {
             print_indent(indent);
-            printf("Variable(%s): %s\n", datatype_to_string(expr->as.variable.type), 
-                   expr->as.variable.name.lexeme);
+            printf("Variable(%s)\n", expr->as.variable.name.lexeme);
             break;
         }
         case EXPR_ASSIGN: {
             print_indent(indent);
             printf("Assign(%s):\n", expr->as.assign.name.lexeme);
-            print_indent(indent + 1);
-            printf("Value:\n");
-            print_expr(expr->as.assign.value, indent + 2);
+            print_expr(expr->as.assign.value, indent + 1);
             break;
         }
         case EXPR_CALL: {
@@ -116,6 +110,36 @@ void print_expr(Expr* expr, int indent) {
                 printf("Arg %d:\n", i);
                 print_expr(expr->as.call.arguments[i], indent + 3);
             }
+            break;
+        }
+        case EXPR_LIST_ACCESS: {
+            print_indent(indent);
+            printf("ListAccess:\n");
+            print_indent(indent + 1);
+            printf("List:\n");
+            print_expr(expr->as.list_access.list, indent + 2);
+            print_indent(indent + 1);
+            printf("Index:\n");
+            print_expr(expr->as.list_access.index, indent + 2);
+            break;
+        }
+        case EXPR_LIST_METHOD: {
+            print_indent(indent);
+            printf("ListMethod(%s):\n", expr->as.list_method.method == TOKEN_ADD ? "add" : "remove");
+            print_indent(indent + 1);
+            printf("List:\n");
+            print_expr(expr->as.list_method.list, indent + 2);
+            print_indent(indent + 1);
+            printf("Argument:\n");
+            print_expr(expr->as.list_method.argument, indent + 2);
+            break;
+        }
+        case EXPR_LIST_PROPERTY: {
+            print_indent(indent);
+            printf("ListProperty(%s):\n", expr->as.list_property.property == TOKEN_LENGTH ? "length" : "unknown");
+            print_indent(indent + 1);
+            printf("List:\n");
+            print_expr(expr->as.list_property.list, indent + 2);
             break;
         }
     }
@@ -205,6 +229,23 @@ void print_stmt(Stmt* stmt, int indent) {
             }
             break;
         }
+        case STMT_FOR: {
+            print_indent(indent);
+            printf("For:\n");
+            print_indent(indent + 1);
+            printf("Init:\n");
+            print_stmt(stmt->as.for_stmt.init, indent + 2);
+            print_indent(indent + 1);
+            printf("Condition:\n");
+            print_expr(stmt->as.for_stmt.condition, indent + 2);
+            print_indent(indent + 1);
+            printf("Increment:\n");
+            print_expr(stmt->as.for_stmt.increment, indent + 2);
+            print_indent(indent + 1);
+            printf("Body:\n");
+            print_stmt(stmt->as.for_stmt.body, indent + 2);
+            break;
+        }
     }
 }
 
@@ -265,6 +306,31 @@ Expr* create_assign_expr(Token name, Expr* value) {
     expr->type = EXPR_ASSIGN;
     expr->as.assign.name = name;
     expr->as.assign.value = value;
+    return expr;
+}
+
+Expr* create_list_access_expr(Expr* list, Expr* index) {
+    Expr* expr = (Expr*)malloc(sizeof(Expr));
+    expr->type = EXPR_LIST_ACCESS;
+    expr->as.list_access.list = list;
+    expr->as.list_access.index = index;
+    return expr;
+}
+
+Expr* create_list_method_expr(Expr* list, TokenType method, Expr* argument) {
+    Expr* expr = (Expr*)malloc(sizeof(Expr));
+    expr->type = EXPR_LIST_METHOD;
+    expr->as.list_method.list = list;
+    expr->as.list_method.method = method;
+    expr->as.list_method.argument = argument;
+    return expr;
+}
+
+Expr* create_list_property_expr(Expr* list, TokenType property) {
+    Expr* expr = (Expr*)malloc(sizeof(Expr));
+    expr->type = EXPR_LIST_PROPERTY;
+    expr->as.list_property.list = list;
+    expr->as.list_property.property = property;
     return expr;
 }
 
@@ -330,6 +396,16 @@ Stmt* create_function_stmt(Token name, DataType return_type, Token* params,
     return stmt;
 }
 
+Stmt* create_for_stmt(Stmt* init, Expr* condition, Expr* increment, Stmt* body) {
+    Stmt* stmt = (Stmt*)malloc(sizeof(Stmt));
+    stmt->type = STMT_FOR;
+    stmt->as.for_stmt.init = init;
+    stmt->as.for_stmt.condition = condition;
+    stmt->as.for_stmt.increment = increment;
+    stmt->as.for_stmt.body = body;
+    return stmt;
+}
+
 // Memory management functions
 void free_expr(Expr* expr) {
     if (expr == NULL) return;
@@ -351,6 +427,17 @@ void free_expr(Expr* expr) {
             break;
         case EXPR_ASSIGN:
             free_expr(expr->as.assign.value);
+            break;
+        case EXPR_LIST_ACCESS:
+            free_expr(expr->as.list_access.list);
+            free_expr(expr->as.list_access.index);
+            break;
+        case EXPR_LIST_METHOD:
+            free_expr(expr->as.list_method.list);
+            free_expr(expr->as.list_method.argument);
+            break;
+        case EXPR_LIST_PROPERTY:
+            free_expr(expr->as.list_property.list);
             break;
         default:
             break;
@@ -391,6 +478,12 @@ void free_stmt(Stmt* stmt) {
             free(stmt->as.function.params);
             free(stmt->as.function.param_types);
             free_stmt(stmt->as.function.body);
+            break;
+        case STMT_FOR:
+            free_stmt(stmt->as.for_stmt.init);
+            free_expr(stmt->as.for_stmt.condition);
+            free_expr(stmt->as.for_stmt.increment);
+            free_stmt(stmt->as.for_stmt.body);
             break;
     }
     
