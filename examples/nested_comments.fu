@@ -1,0 +1,21 @@
+/* 
+ * This is an outer comment
+ * /* This is a nested comment */
+ * This is still part of the outer comment
+ */
+
+int test_function() {
+    /* First level comment
+       /* Second level comment */
+       Still in first level
+     */
+    return 42; // End of function
+}
+
+void main() {
+    /* Comment with multiple
+       /* Nested */
+       /* Comments */
+     */
+    int x = test_function();
+} 

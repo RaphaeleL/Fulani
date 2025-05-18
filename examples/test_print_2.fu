@@ -1,0 +1,5 @@
+void main() {
+    int num = 42;
+    print("The answer is: ");
+    println(num);
+}

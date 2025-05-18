@@ -1,0 +1,82 @@
+// =============================
+// Comment Examples Demonstration
+// =============================
+
+// 1. Single-line comments
+// This is a single-line comment
+int x = 10; // Comments can appear after code
+
+// 2. Multi-line comments
+/* This is a multi-line comment
+   that spans multiple lines
+   and can be used for longer explanations */
+
+/* 
+ * This style of multi-line comment is
+ * often used for documentation
+ * and is easier to read
+ */
+
+// 3. Nested comments
+/* Outer comment starts
+   /* Inner comment is completely within outer comment */
+   Outer comment continues after inner comment
+ */
+
+// 4. Comments in various code contexts
+
+/* Function documentation
+ * add - adds two integers and returns the result
+ * @param a - first integer
+ * @param b - second integer
+ * @return - sum of a and b
+ */
+int add(int a, int b) {
+    // Simple implementation
+    return a + b;
+}
+
+/* 
+ * More complex function with comments throughout
+ */
+int factorial(int n) {
+    // Handle base case
+    if (n <= 1) {
+        return 1; // Return 1 for 0! and 1!
+    }
+    
+    /* Recursive implementation:
+     * n! = n * (n-1)!
+     */
+    return n * factorial(n - 1);
+}
+
+/*
+ * Main function - entry point for the program
+ */
+void main() {
+    // Variable declarations
+    int a = 5;
+    int b = 10;
+    
+    /* Calculate and display results */
+    println("Addition: ", a, " + ", b, " = ", add(a, b));
+    
+    // Loop with comments
+    int i = 0;
+    while (i <= 5) { // Loop up to 5
+        // Calculate factorial
+        println(i, "! = ", factorial(i));
+        i = i + 1; // Increment counter
+    }
+    
+    // This comment /* has a comment */ inside it
+    
+    // Final message
+    println("Comment demonstration complete!");
+    
+    /* Last comment
+     * at the end
+     * of file
+     */
+} 

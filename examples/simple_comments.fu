@@ -1,0 +1,16 @@
+// This is a single line comment
+
+/* This is a 
+   multi-line comment */
+
+int add(int a, int b) {
+    // Return the sum
+    return a + b; // End of function
+}
+
+void main() {
+    /* Comment before code */
+    int x = 10;
+    int y = 20;
+    int result = add(x, y); // Call add function
+} 

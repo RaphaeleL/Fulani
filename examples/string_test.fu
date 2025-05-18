@@ -1,0 +1,6 @@
+void main() {
+    println("Simple string test");
+    println("String with \"quotes\" inside");
+    println("String with // comment syntax inside");
+    println("String with /* comment syntax */ inside");
+} 
