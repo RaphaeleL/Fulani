@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
-#include "parser.h"
+#include "headers/parser.h"
 
 // Forward declarations
 static Expr* parse_expression(Parser* parser);

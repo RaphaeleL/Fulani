@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-#include "ast.h"
+#include "headers/ast.h"
 
 // AST debugging and pretty printing functions
 static void print_indent(int indent) {

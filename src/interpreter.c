@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "interpreter.h"
+#include "headers/interpreter.h"
 
 // Forward declarations
 static void execute_stmt(Interpreter* interpreter, Stmt* stmt, bool* early_return, Variable* return_value);

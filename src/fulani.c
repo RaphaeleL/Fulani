@@ -1,9 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "lexer.h"
-#include "parser.h"
-#include "interpreter.h"
+#include "headers/lexer.h"
+#include "headers/parser.h"
+#include "headers/interpreter.h"
 
 static char* read_file(const char* path) {
     FILE* file = fopen(path, "rb");

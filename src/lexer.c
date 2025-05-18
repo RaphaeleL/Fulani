@@ -3,7 +3,7 @@
 #include <string.h>
 #include <ctype.h>
 #include <stdbool.h>
-#include "lexer.h"
+#include "headers/lexer.h"
 
 static Token make_token(Lexer* lexer, TokenType type) {
     Token token;
