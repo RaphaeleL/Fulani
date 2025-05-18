@@ -1,0 +1,32 @@
+// Example of using the include system
+include "io.fu";       // Include the I/O library
+include "math.fu";     // Include the math library
+include "string.fu";   // Include the string library
+
+void main() {
+    // Use functions from the IO library
+    println("Demonstrating the Fulani standard library");
+    println("----------------------------------------");
+    
+    // Use functions from the math library
+    int number = 5;
+    println("Pi is approximately ", PI);
+    
+    float root = sqrt(16.0);
+    println("Square root of 16 is ", root);
+    
+    // Error handling example
+    if (number < 0) {
+        error("Number cannot be negative");
+    } else {
+        println("Number is valid: ", number);
+    }
+    
+    // Debug message (only shown when debug is true)
+    bool debug_mode = true;
+    debug("Processing complete", debug_mode);
+    
+    // String operations
+    string message = bool_to_string(true);
+    println("Boolean true as string: ", message);
+} 

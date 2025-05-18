@@ -19,6 +19,7 @@ typedef enum {
     TOKEN_ADD,      // For list.add method
     TOKEN_REMOVE,   // For list.remove method
     TOKEN_LENGTH,   // For list.length property
+    TOKEN_INCLUDE,  // New keyword for including libraries
 
     // Identifiers and literals
     TOKEN_IDENTIFIER,

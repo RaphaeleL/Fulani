@@ -383,9 +383,8 @@ Stmt* create_return_stmt(Expr* expression) {
     return stmt;
 }
 
-Stmt* create_function_stmt(Token name, DataType return_type, Token* params,
-                          DataType* param_types, int param_count, Stmt* body) {
-    Stmt* stmt = (Stmt*)malloc(sizeof(Stmt));
+Stmt* create_function_stmt(Token name, DataType return_type, Token* params, DataType* param_types, int param_count, Stmt* body) {
+    Stmt* stmt = malloc(sizeof(Stmt));
     stmt->type = STMT_FUNCTION;
     stmt->as.function.name = name;
     stmt->as.function.return_type = return_type;
@@ -393,6 +392,13 @@ Stmt* create_function_stmt(Token name, DataType return_type, Token* params,
     stmt->as.function.param_types = param_types;
     stmt->as.function.param_count = param_count;
     stmt->as.function.body = body;
+    return stmt;
+}
+
+Stmt* create_include_stmt(Token path) {
+    Stmt* stmt = malloc(sizeof(Stmt));
+    stmt->type = STMT_INCLUDE;
+    stmt->as.include.path = path;
     return stmt;
 }
 

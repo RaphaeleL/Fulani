@@ -13,13 +13,13 @@ make clean && make
 To run a program:
 
 ```bash
-./ownlang path/to/your/program.fu
+./fulani path/to/your/program.fu
 ```
 
 To run in debug mode (shows execution details):
 
 ```bash
-./ownlang --debug path/to/your/program.fu
+./fulani --debug path/to/your/program.fu
 ```
 
 ## Turing Completeness
@@ -29,7 +29,50 @@ Fulani's Turing completeness has been demonstrated through implementations of:
 - **Rule 110 Cellular Automaton**: A one-dimensional cellular automaton that has been proven to be Turing complete
 - **Counter Machine Simulation**: An implementation of a 2-counter machine, which is equivalent to a Turing machine
 
-These examples can be found in the `examples/` directory.
+These examples can be found in the `proofs/` directory.
+
+## Library System
+
+Fulani supports a library inclusion system, allowing you to organize and reuse code. To include a library in your program:
+
+```
+include "library_name.fu";
+```
+
+Libraries can be placed in:
+- The `lib/stdlib/` directory for standard libraries
+- The current directory for project-specific libraries
+- An absolute or relative path can also be specified
+
+## Standard Library
+
+Fulani comes with a standard library of useful functions and utilities:
+
+### IO Library (io.fu)
+- `print()`, `println()`: Output functions
+- `error()`, `warning()`: Error reporting functions
+- `debug()`: Conditional debug output
+
+### Math Library (math.fu)
+- Mathematical constants (PI, E)
+- Basic functions: `abs()`, `max()`, `min()`, `pow()`
+- Advanced functions: `sqrt()`, `factorial()`, `is_prime()`
+
+### String Library (string.fu)
+- String manipulation: `length()`, `substring()`
+- String testing: `contains()`, `starts_with()`, `ends_with()`
+- Conversion utilities: `int_to_string()`, `float_to_string()`, `bool_to_string()`
+
+### Data Structures Library (data.fu)
+- Stack operations: `stack_push()`, `stack_pop()`, `stack_peek()`
+- Queue operations: `queue_enqueue()`, `queue_dequeue()`, `queue_peek()`
+- Search algorithms: `binary_search()`
+- Sorting algorithms: `selection_sort()`
+
+### List Library (list.fu)
+- List operations: `contains()`, `index_of()`, `copy()`
+- Utility functions: `sum()`, `max_value()`, `min_value()`
+- String utilities: `join()`
 
 ## Language Features
 
@@ -66,7 +109,7 @@ int a, b, c;
 
 ### Operators
 
-- Arithmetic: `+`, `-`, `*`, `/`, `%` (modulo)
+- Arithmetic: `+`, `-`, `*`, `/`, `%`
 - Comparison: `==`, `!=`, `<`, `>`, `<=`, `>=`
 - Assignment: `=`
 
@@ -207,8 +250,6 @@ Each phase performs specific checks and transformations to ensure the program is
 Potential enhancements for the language include:
 
 - User-defined types/structures
-- More built-in functions
-- Standard library
 - Improved error handling and diagnostics
 
 ## License
