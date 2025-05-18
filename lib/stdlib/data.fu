@@ -1,0 +1,106 @@
+// Fulani Standard Library - Data Structures Module
+// This module provides implementations of common data structures
+
+// Stack implementation using a list
+void stack_push(list stack, int value) {
+    stack.add(value);
+}
+
+int stack_pop(list stack) {
+    if (stack.length == 0) {
+        error("Cannot pop from empty stack");
+        return 0;
+    }
+    
+    int value = stack[stack.length - 1];
+    stack.remove(stack.length - 1);
+    return value;
+}
+
+int stack_peek(list stack) {
+    if (stack.length == 0) {
+        error("Cannot peek empty stack");
+        return 0;
+    }
+    
+    return stack[stack.length - 1];
+}
+
+bool stack_is_empty(list stack) {
+    return stack.length == 0;
+}
+
+// Queue implementation using a list
+void queue_enqueue(list queue, int value) {
+    queue.add(value);
+}
+
+int queue_dequeue(list queue) {
+    if (queue.length == 0) {
+        error("Cannot dequeue from empty queue");
+        return 0;
+    }
+    
+    int value = queue[0];
+    queue.remove(0);
+    return value;
+}
+
+int queue_peek(list queue) {
+    if (queue.length == 0) {
+        error("Cannot peek empty queue");
+        return 0;
+    }
+    
+    return queue[0];
+}
+
+bool queue_is_empty(list queue) {
+    return queue.length == 0;
+}
+
+// Binary Search implementation
+int binary_search(list sorted_array, int target) {
+    int left = 0;
+    int right = sorted_array.length - 1;
+    
+    while (left <= right) {
+        int mid = left + (right - left) / 2;
+        
+        if (sorted_array[mid] == target) {
+            return mid;  // Found the target
+        }
+        
+        if (sorted_array[mid] < target) {
+            left = mid + 1;  // Target is in the right half
+        } else {
+            right = mid - 1;  // Target is in the left half
+        }
+    }
+    
+    return -1;  // Target not found
+}
+
+// Sorting implementation (Selection Sort)
+void selection_sort(list arr) {
+    int n = arr.length;
+    
+    for (int i = 0; i < n - 1; i = i + 1) {
+        int min_idx = i;
+        
+        for (int j = i + 1; j < n; j = j + 1) {
+            if (arr[j] < arr[min_idx]) {
+                min_idx = j;
+            }
+        }
+        
+        // Swap the found minimum element with the element at i
+        int temp = arr[min_idx];
+        
+        // This requires the array assignment to work properly
+        // We're using a workaround with temporary variables
+        int current = arr[i];
+        arr[min_idx] = current;
+        arr[i] = temp;
+    }
+} 

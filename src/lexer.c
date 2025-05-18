@@ -202,67 +202,58 @@ static Token number(Lexer* lexer) {
     return make_token(lexer, TOKEN_INTEGER_LITERAL);
 }
 
+// Helper function to check if the current identifier is a keyword
+static TokenType check_keyword(Lexer* lexer, int start, int length, const char* rest, TokenType type) {
+    if (lexer->current - lexer->start == start + length && 
+        strncmp(lexer->source + lexer->start + start, rest, length) == 0) {
+        return type;
+    }
+    return TOKEN_IDENTIFIER;
+}
+
 static TokenType identifier_type(Lexer* lexer) {
     switch (lexer->source[lexer->start]) {
-        case 'a': 
-            if (lexer->current - lexer->start == 3 &&
-                strncmp(lexer->source + lexer->start, "add", 3) == 0)
-                return TOKEN_ADD;
-            break;
-        case 'b': {
+        case 'a': return check_keyword(lexer, 1, 2, "dd", TOKEN_ADD);
+        case 'b': return check_keyword(lexer, 1, 3, "ool", TOKEN_BOOL);
+        case 'd': return check_keyword(lexer, 1, 5, "ouble", TOKEN_DOUBLE);
+        case 'e': return check_keyword(lexer, 1, 3, "lse", TOKEN_ELSE);
+        case 'f': {
             if (lexer->current - lexer->start > 1) {
                 switch (lexer->source[lexer->start + 1]) {
-                    case 'o':
-                        if (lexer->current - lexer->start == 4 &&
-                            strncmp(lexer->source + lexer->start + 2, "ol", 2) == 0) return TOKEN_BOOL;
-                        break;
+                    case 'a': return check_keyword(lexer, 2, 3, "lse", TOKEN_BOOL_LITERAL);
+                    case 'l': return check_keyword(lexer, 2, 3, "oat", TOKEN_FLOAT);
+                    case 'o': return check_keyword(lexer, 2, 1, "r", TOKEN_FOR);
                 }
             }
             break;
         }
-        case 'd':
-            if (lexer->current - lexer->start == 6 &&
-                strncmp(lexer->source + lexer->start + 1, "ouble", 5) == 0)
-                return TOKEN_DOUBLE;
-            break;
-        case 'e':
-            if (lexer->current - lexer->start == 4 &&
-                strncmp(lexer->source + lexer->start + 1, "lse", 3) == 0)
-                return TOKEN_ELSE;
-            break;
-        case 'f':
-            if (lexer->current - lexer->start == 5 &&
-                strncmp(lexer->source + lexer->start + 1, "loat", 4) == 0)
-                return TOKEN_FLOAT;
-            else if (lexer->current - lexer->start == 3 &&
-                strncmp(lexer->source + lexer->start, "for", 3) == 0)
-                return TOKEN_FOR;
-            break;
         case 'i': {
             if (lexer->current - lexer->start > 1) {
                 switch (lexer->source[lexer->start + 1]) {
-                    case 'f': 
-                        if (lexer->current - lexer->start == 2) return TOKEN_IF;
+                    case 'f': return check_keyword(lexer, 2, 0, "", TOKEN_IF);
+                    case 'n': {
+                        if (lexer->current - lexer->start > 2) {
+                            switch (lexer->source[lexer->start + 2]) {
+                                case 't': return check_keyword(lexer, 3, 0, "", TOKEN_INT);
+                                case 'c': return check_keyword(lexer, 3, 4, "lude", TOKEN_INCLUDE);
+                            }
+                        }
                         break;
-                    case 'n':
-                        if (lexer->current - lexer->start == 3 &&
-                            lexer->source[lexer->start + 2] == 't') return TOKEN_INT;
-                        break;
+                    }
                 }
             }
             break;
         }
-        case 'l':
-            if (lexer->current - lexer->start == 4 &&
-                strncmp(lexer->source + lexer->start + 1, "ist", 3) == 0)
-                return TOKEN_LIST;
-            else if (lexer->current - lexer->start == 4 &&
-                strncmp(lexer->source + lexer->start + 1, "ong", 3) == 0)
-                return TOKEN_LONG;
-            else if (lexer->current - lexer->start == 6 &&
-                strncmp(lexer->source + lexer->start + 1, "ength", 5) == 0)
-                return TOKEN_LENGTH;
+        case 'l': {
+            if (lexer->current - lexer->start > 1) {
+                switch (lexer->source[lexer->start + 1]) {
+                    case 'e': return check_keyword(lexer, 2, 4, "ngth", TOKEN_LENGTH);
+                    case 'i': return check_keyword(lexer, 2, 2, "st", TOKEN_LIST);
+                    case 'o': return check_keyword(lexer, 2, 2, "ng", TOKEN_LONG);
+                }
+            }
             break;
+        }
         case 'r':
             if (lexer->current - lexer->start == 6 &&
                 strncmp(lexer->source + lexer->start + 1, "eturn", 5) == 0)

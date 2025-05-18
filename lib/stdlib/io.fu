@@ -1,0 +1,19 @@
+// Fulani Standard Library - IO Module
+// This module provides input and output functionality
+
+// Print an error message
+void error(string message) {
+    println("ERROR: ", message);
+}
+
+// Print a warning message
+void warning(string message) {
+    println("WARNING: ", message);
+}
+
+// Print a debug message (only when debug mode is enabled)
+void debug(string message, bool debug_enabled) {
+    if (debug_enabled) {
+        println("DEBUG: ", message);
+    }
+} 

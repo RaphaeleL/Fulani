@@ -1,0 +1,30 @@
+// Fulani Standard Library - Math Module
+// This module provides mathematical functions and constants
+
+// Constants
+float PI = 3.14159265359;
+float E = 2.71828182846;
+
+// Absolute value of an integer
+int abs(int x) {
+    if (x < 0) {
+        return -x;
+    }
+    return x;
+}
+
+// Maximum of two integers
+int max(int a, int b) {
+    if (a > b) {
+        return a;
+    }
+    return b;
+}
+
+// Minimum of two integers
+int min(int a, int b) {
+    if (a < b) {
+        return a;
+    }
+    return b;
+}

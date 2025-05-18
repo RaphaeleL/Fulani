@@ -1,0 +1,10 @@
+// Fulani Standard Library - String Module
+// This module provides string manipulation functions
+
+// Convert a boolean to a string
+string bool_to_string(bool value) {
+    if (value) {
+        return "true";
+    }
+    return "false";
+}

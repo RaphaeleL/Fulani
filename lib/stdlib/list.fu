@@ -1,0 +1,91 @@
+// Fulani Standard Library - List Module
+// This module provides list manipulation functions
+
+// Create a new list of integers with specified capacity
+list create_int_list(int capacity) {
+    list result;
+    return result;
+}
+
+// Check if a list contains a value
+bool contains(list values, int value) {
+    for (int i = 0; i < values.length; i = i + 1) {
+        if (values[i] == value) {
+            return true;
+        }
+    }
+    return false;
+}
+
+// Find the index of a value in a list, or -1 if not found
+int index_of(list values, int value) {
+    for (int i = 0; i < values.length; i = i + 1) {
+        if (values[i] == value) {
+            return i;
+        }
+    }
+    return -1;
+}
+
+// Create a copy of a list
+list copy(list original) {
+    list result;
+    for (int i = 0; i < original.length; i = i + 1) {
+        result.add(original[i]);
+    }
+    return result;
+}
+
+// Get the sum of all values in an integer list
+int sum(list values) {
+    int total = 0;
+    for (int i = 0; i < values.length; i = i + 1) {
+        total = total + values[i];
+    }
+    return total;
+}
+
+// Get the maximum value in an integer list
+int max_value(list values) {
+    if (values.length == 0) {
+        error("Cannot find maximum of empty list");
+        return 0;
+    }
+    
+    int max_val = values[0];
+    for (int i = 1; i < values.length; i = i + 1) {
+        if (values[i] > max_val) {
+            max_val = values[i];
+        }
+    }
+    return max_val;
+}
+
+// Get the minimum value in an integer list
+int min_value(list values) {
+    if (values.length == 0) {
+        error("Cannot find minimum of empty list");
+        return 0;
+    }
+    
+    int min_val = values[0];
+    for (int i = 1; i < values.length; i = i + 1) {
+        if (values[i] < min_val) {
+            min_val = values[i];
+        }
+    }
+    return min_val;
+}
+
+// Join a list of strings with a separator
+string join(list strings, string separator) {
+    if (strings.length == 0) {
+        return "";
+    }
+    
+    string result = strings[0];
+    for (int i = 1; i < strings.length; i = i + 1) {
+        result = result + separator + strings[i];
+    }
+    return result;
+} 

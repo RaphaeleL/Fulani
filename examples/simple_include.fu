@@ -1,0 +1,5 @@
+include "math.fu";
+
+void main() {
+    println(PI);
+} 

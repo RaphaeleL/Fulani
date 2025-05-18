@@ -2,12 +2,15 @@
 #include <stdlib.h>
 #include <string.h>
 #include "headers/interpreter.h"
+#include "headers/lexer.h"
+#include "headers/parser.h"
 
 // Forward declarations
 static void execute_stmt(Interpreter* interpreter, Stmt* stmt, bool* early_return, Variable* return_value);
-
-// Forward declarations for print_value
 static void print_value(Variable arg);
+static void process_include(Interpreter* interpreter, const char* path);
+static char* get_lib_path(const char* filename);
+static char* read_file_content(const char* path);
 
 static Environment* create_environment(Environment* enclosing) {
     Environment* env = malloc(sizeof(Environment));
@@ -1089,6 +1092,30 @@ static void execute_stmt(Interpreter* interpreter, Stmt* stmt, bool* early_retur
             }
             break;
         }
+        case STMT_INCLUDE: {
+            // Get the include path
+            const char* path_str = stmt->as.include.path.lexeme;
+            
+            // Fix path - remove quotes
+            char* path = strdup(path_str);
+            if (path[0] == '"') {
+                // Remove opening quote
+                memmove(path, path + 1, strlen(path));
+            }
+            
+            // Remove closing quote if exists
+            int len = strlen(path);
+            if (len > 0 && path[len - 1] == '"') {
+                path[len - 1] = '\0';
+            }
+            
+            // Process the include
+            process_include(interpreter, path);
+            
+            // Free temporary path
+            free(path);
+            break;
+        }
     }
 }
 
@@ -1125,4 +1152,148 @@ void interpreter_interpret(Interpreter* interpreter, Stmt** statements, int coun
 
 void interpreter_cleanup(Interpreter* interpreter) {
     free_environment(interpreter->globals);
-} 
+}
+
+// Process an include statement by loading and interpreting the included file
+static void process_include(Interpreter* interpreter, const char* path) {
+    // Get the full path to the library file
+    char* full_path = get_lib_path(path);
+    
+    if (full_path == NULL) {
+        fprintf(stderr, "Error: Could not find library file: %s\n", path);
+        interpreter->had_error = true;
+        return;
+    }
+    
+    // Read the file content
+    char* source = read_file_content(full_path);
+    if (source == NULL) {
+        fprintf(stderr, "Error: Could not read library file: %s\n", full_path);
+        free(full_path);
+        interpreter->had_error = true;
+        return;
+    }
+    
+    printf("Including file: %s\n", full_path);
+    
+    // Parse the included file
+    Lexer lexer;
+    lexer_init(&lexer, source);
+    
+    Parser parser;
+    parser_init(&parser, &lexer);
+    
+    int count = 0;
+    Stmt** statements = parse(&parser, &count);
+    
+    if (parser.had_error) {
+        fprintf(stderr, "Error: Failed to parse included file: %s\n", full_path);
+        interpreter->had_error = true;
+        free(source);
+        free(full_path);
+        return;
+    }
+    
+    // Save the current environment
+    Environment* previous = interpreter->environment;
+    
+    // Execute each statement in the included file
+    for (int i = 0; i < count; i++) {
+        Variable return_value = {0};
+        bool early_return = false;
+        execute_stmt(interpreter, statements[i], &early_return, &return_value);
+        
+        if (interpreter->had_error) {
+            fprintf(stderr, "Error: Failed to execute statement in included file: %s\n", full_path);
+            break;
+        }
+    }
+    
+    // Free resources
+    for (int i = 0; i < count; i++) {
+        free_stmt(statements[i]);
+    }
+    free(statements);
+    free(source);
+    free(full_path);
+}
+
+// Get the full path to a library file
+static char* get_lib_path(const char* filename) {
+    // Debug: Print the filename we're looking for
+    printf("Looking for file: '%s'\n", filename);
+    
+    // Check if it's a relative path or stdlib reference
+    if (filename[0] == '/' || 
+        (filename[0] == '.' && filename[1] == '/') || 
+        (filename[0] == '.' && filename[1] == '.' && filename[2] == '/')) {
+        // It's a relative or absolute path, use it directly
+        return strdup(filename);
+    }
+    
+    // Try looking in the standard library
+    char* stdlib_path = malloc(strlen("lib/stdlib/") + strlen(filename) + 1);
+    sprintf(stdlib_path, "lib/stdlib/%s", filename);
+    
+    // Check if the file exists
+    FILE* file = fopen(stdlib_path, "r");
+    if (file) {
+        fclose(file);
+        printf("Found in stdlib: %s\n", stdlib_path);
+        return stdlib_path;
+    }
+    
+    // File not found in stdlib, free the path
+    free(stdlib_path);
+    
+    // Try looking in the current directory
+    FILE* local_file = fopen(filename, "r");
+    if (local_file) {
+        fclose(local_file);
+        printf("Found in current directory: %s\n", filename);
+        return strdup(filename);
+    }
+    
+    // File not found
+    printf("File not found: %s\n", filename);
+    return NULL;
+}
+
+// Read the contents of a file
+static char* read_file_content(const char* path) {
+    FILE* file = fopen(path, "r");
+    if (!file) {
+        fprintf(stderr, "Error: Cannot open file: %s\n", path);
+        return NULL;
+    }
+    
+    // Get file size
+    fseek(file, 0, SEEK_END);
+    long size = ftell(file);
+    rewind(file);
+    
+    // Allocate buffer
+    char* buffer = malloc(size + 1);
+    if (!buffer) {
+        fprintf(stderr, "Error: Memory allocation failed when reading file: %s\n", path);
+        fclose(file);
+        return NULL;
+    }
+    
+    // Read file content
+    size_t bytes_read = fread(buffer, 1, size, file);
+    if (bytes_read < (size_t)size) {
+        fprintf(stderr, "Error: Failed to read entire file: %s (read %zu of %ld bytes)\n", 
+                path, bytes_read, size);
+        free(buffer);
+        fclose(file);
+        return NULL;
+    }
+    
+    buffer[bytes_read] = '\0';
+    
+    printf("Successfully read %zu bytes from file: %s\n", bytes_read, path);
+    
+    fclose(file);
+    return buffer;
+}

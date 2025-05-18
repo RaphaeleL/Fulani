@@ -1,0 +1,120 @@
+// Advanced Fulani Example
+// Demonstrates using multiple libraries and error handling
+
+include "io.fu";       // Include IO functions
+include "math.fu";     // Include math functions
+include "data.fu";     // Include data structure functions
+include "list.fu";     // Include list utilities
+
+// Function to calculate the nth Fibonacci number
+int fibonacci(int n) {
+    if (n < 0) {
+        error("Fibonacci undefined for negative numbers");
+        return -1;
+    }
+    
+    if (n <= 1) {
+        return n;
+    }
+    
+    return fibonacci(n - 1) + fibonacci(n - 2);
+}
+
+// Function to demonstrate stack operations with error handling
+void demonstrate_stack() {
+    println("Demonstrating Stack Operations:");
+    
+    list stack;
+    
+    // Push some values
+    println("  Pushing values: 10, 20, 30");
+    stack_push(stack, 10);
+    stack_push(stack, 20);
+    stack_push(stack, 30);
+    
+    // Peek at the top value
+    if (!stack_is_empty(stack)) {
+        println("  Top value: ", stack_peek(stack));
+    } else {
+        error("Stack should not be empty");
+    }
+    
+    // Pop all values with error handling
+    println("  Popping all values:");
+    while (!stack_is_empty(stack)) {
+        println("    Popped: ", stack_pop(stack));
+    }
+    
+    // Try to pop from an empty stack (should show error message)
+    println("  Attempting to pop from empty stack:");
+    int value = stack_pop(stack);
+    println("  Operation completed with value: ", value);
+}
+
+// Function to search for a number in a sorted list
+void search_example() {
+    println("Demonstrating Binary Search:");
+    
+    list numbers;
+    for (int i = 0; i < 10; i = i + 1) {
+        numbers.add(i * 2);  // Even numbers: 0, 2, 4, 6, 8, 10, 12, 14, 16, 18
+    }
+    
+    println("  List: ", numbers);
+    
+    // Try successful search
+    int target = 8;
+    int position = binary_search(numbers, target);
+    
+    if (position != -1) {
+        println("  Found ", target, " at position ", position);
+    } else {
+        warning("Value not found, but it should be there");
+    }
+    
+    // Try unsuccessful search
+    target = 9;
+    position = binary_search(numbers, target);
+    
+    if (position != -1) {
+        warning("Found ", target, ", but it shouldn't be in the list");
+    } else {
+        println("  Did not find ", target, " (as expected)");
+    }
+}
+
+// Main function to orchestrate the demos
+void main() {
+    println("ADVANCED FULANI EXAMPLE");
+    println("======================");
+    
+    // Activate debug mode for detailed output
+    bool debug_mode = true;
+    
+    // Fibonacci calculation with error handling
+    println("\n1. Fibonacci Calculation:");
+    
+    int fib_input = 10;
+    debug("Calculating fibonacci for " + int_to_string(fib_input), debug_mode);
+    
+    int fib_result = fibonacci(fib_input);
+    if (fib_result >= 0) {
+        println("  Fibonacci(", fib_input, ") = ", fib_result);
+    }
+    
+    // Try negative input (should show error)
+    fib_input = -1;
+    debug("Attempting invalid fibonacci calculation", debug_mode);
+    fib_result = fibonacci(fib_input);
+    
+    // Stack demonstration
+    println("\n2. Stack Operations:");
+    demonstrate_stack();
+    
+    // Binary search demonstration
+    println("\n3. Binary Search:");
+    search_example();
+    
+    // Final summary
+    println("\nExample completed successfully!");
+} 

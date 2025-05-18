@@ -35,7 +35,8 @@ typedef enum {
     STMT_WHILE,
     STMT_FOR,
     STMT_RETURN,
-    STMT_FUNCTION
+    STMT_FUNCTION,
+    STMT_INCLUDE         // New statement type for includes
 } StmtType;
 
 // Forward declarations
@@ -151,6 +152,11 @@ typedef struct {
     Expr* expression;
 } ReturnStmt;
 
+// New include statement structure
+typedef struct {
+    Token path;          // Path to the library file
+} IncludeStmt;
+
 struct Stmt {
     StmtType type;
     union {
@@ -162,6 +168,7 @@ struct Stmt {
         ForStmt for_stmt;
         ReturnStmt return_stmt;
         FunctionStmt function;
+        IncludeStmt include;  // New include statement
     } as;
 };
 
@@ -184,6 +191,9 @@ Stmt* create_while_stmt(Expr* condition, Stmt* body);
 Stmt* create_for_stmt(Stmt* init, Expr* condition, Expr* increment, Stmt* body);
 Stmt* create_return_stmt(Expr* expression);
 Stmt* create_function_stmt(Token name, DataType return_type, Token* params, DataType* param_types, int param_count, Stmt* body);
+
+// Create an include statement
+Stmt* create_include_stmt(Token path);
 
 // Memory management functions
 void free_expr(Expr* expr);

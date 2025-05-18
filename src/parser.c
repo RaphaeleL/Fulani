@@ -20,6 +20,17 @@ static Stmt* parse_if_statement(Parser* parser);
 static Stmt* parse_while_statement(Parser* parser);
 static Stmt* parse_return_statement(Parser* parser);
 static Stmt* parse_for_statement(Parser* parser);
+static Stmt* statement(Parser* parser);
+static Stmt* declaration(Parser* parser);
+static Stmt* var_declaration(Parser* parser, DataType type, Token name);
+static Stmt* function_declaration(Parser* parser, DataType return_type, Token name);
+static Stmt* expression_statement(Parser* parser);
+static Stmt* block_statement(Parser* parser);
+static Stmt* if_statement(Parser* parser);
+static Stmt* while_statement(Parser* parser);
+static Stmt* for_statement(Parser* parser);
+static Stmt* return_statement(Parser* parser);
+static Stmt* include_statement(Parser* parser);
 
 static void advance(Parser* parser) {
     parser->previous = parser->current;
@@ -388,78 +399,108 @@ static Stmt* parse_statement(Parser* parser) {
 }
 
 static Stmt* parse_declaration(Parser* parser) {
-    if (check(parser, TOKEN_INT) || check(parser, TOKEN_FLOAT) ||
-        check(parser, TOKEN_STRING) || check(parser, TOKEN_VOID) ||
-        check(parser, TOKEN_BOOL) || check(parser, TOKEN_LIST) ||
-        check(parser, TOKEN_DOUBLE) || check(parser, TOKEN_LONG)) {
-        DataType type = parse_type(parser);
+    if (match(parser, TOKEN_INCLUDE)) {
+        Token path = parser->current;
+        consume(parser, TOKEN_STRING_LITERAL, "Expected string literal for include path.");
+        
+        consume(parser, TOKEN_SEMICOLON, "Expected ';' after include statement.");
+        
+        return create_include_stmt(path);
+    }
+    
+    if (match(parser, TOKEN_INT) || match(parser, TOKEN_FLOAT) ||
+        match(parser, TOKEN_STRING) || match(parser, TOKEN_VOID) ||
+        match(parser, TOKEN_BOOL) || match(parser, TOKEN_LIST) ||
+        match(parser, TOKEN_DOUBLE) || match(parser, TOKEN_LONG)) {
+        
+        TokenType type_token = parser->previous.type;
+        DataType type;
+        
+        switch (type_token) {
+            case TOKEN_INT: type = TYPE_INT; break;
+            case TOKEN_FLOAT: type = TYPE_FLOAT; break;
+            case TOKEN_STRING: type = TYPE_STRING; break;
+            case TOKEN_VOID: type = TYPE_VOID; break;
+            case TOKEN_BOOL: type = TYPE_BOOL; break;
+            case TOKEN_LIST: type = TYPE_LIST; break;
+            case TOKEN_DOUBLE: type = TYPE_DOUBLE; break;
+            case TOKEN_LONG: type = TYPE_LONG; break;
+            default: type = TYPE_VOID; break; // Should never happen
+        }
+        
         Token name = parser->current;
         consume(parser, TOKEN_IDENTIFIER, "Expect identifier.");
         
         if (match(parser, TOKEN_LPAREN)) {
-            // Function declaration
-            
-            // Check if this is main function and enforce void return type with no parameters
-            if (strcmp(name.lexeme, "main") == 0) {
-                if (type != TYPE_VOID) {
-                    parser_error_at_previous(parser, "Main function must have void return type.");
-                }
-                
-                // For main, we expect no parameters
-                if (!check(parser, TOKEN_RPAREN)) {
-                    parser_error_at_current(parser, "Main function must have no parameters.");
-                }
-                
-                consume(parser, TOKEN_RPAREN, "Expect ')' after parameters.");
-                consume(parser, TOKEN_LBRACE, "Expect '{' before function body.");
-                Stmt* body = parse_block(parser);
-                
-                return create_function_stmt(name, type, NULL, NULL, 0, body);
-            }
-            
-            // Regular function declaration
-            Token* parameters = NULL;
-            DataType* param_types = NULL;
-            int param_count = 0;
-            
-            if (!check(parser, TOKEN_RPAREN)) {
-                do {
-                    if (param_count >= 255) {
-                        parser_error_at_current(parser, "Cannot have more than 255 parameters.");
-                    }
-                    
-                    DataType param_type = parse_type(parser);
-                    Token param_name = parser->current;
-                    consume(parser, TOKEN_IDENTIFIER, "Expect parameter name.");
-                    
-                    parameters = realloc(parameters, sizeof(Token) * (param_count + 1));
-                    param_types = realloc(param_types, sizeof(DataType) * (param_count + 1));
-                    
-                    parameters[param_count] = param_name;
-                    param_types[param_count] = param_type;
-                    param_count++;
-                } while (match(parser, TOKEN_COMMA));
-            }
-            
-            consume(parser, TOKEN_RPAREN, "Expect ')' after parameters.");
-            consume(parser, TOKEN_LBRACE, "Expect '{' before function body.");
-            Stmt* body = parse_block(parser);
-            
-            return create_function_stmt(name, type, parameters, param_types,
-                                     param_count, body);
+            return function_declaration(parser, type, name);
         } else {
-            // Variable declaration
-            Expr* initializer = NULL;
-            if (match(parser, TOKEN_ASSIGN)) {
-                initializer = parse_expression(parser);
-            }
-            
-            consume(parser, TOKEN_SEMICOLON, "Expect ';' after variable declaration.");
-            return create_var_decl_stmt(name, type, initializer);
+            return var_declaration(parser, type, name);
         }
     }
     
-    return parse_statement(parser);
+    return statement(parser);
+}
+
+// Include statement is now handled directly in declaration
+
+static Stmt* var_declaration(Parser* parser, DataType type, Token name) {
+    Expr* initializer = NULL;
+    if (match(parser, TOKEN_ASSIGN)) {
+        initializer = parse_expression(parser);
+    }
+    
+    consume(parser, TOKEN_SEMICOLON, "Expect ';' after variable declaration.");
+    return create_var_decl_stmt(name, type, initializer);
+}
+
+static Stmt* function_declaration(Parser* parser, DataType return_type, Token name) {
+    // Check if this is main function and enforce void return type with no parameters
+    if (strcmp(name.lexeme, "main") == 0) {
+        if (return_type != TYPE_VOID) {
+            parser_error_at_previous(parser, "Main function must have void return type.");
+        }
+        
+        // For main, we expect no parameters
+        if (!check(parser, TOKEN_RPAREN)) {
+            parser_error_at_current(parser, "Main function must have no parameters.");
+        }
+        
+        consume(parser, TOKEN_RPAREN, "Expect ')' after parameters.");
+        consume(parser, TOKEN_LBRACE, "Expect '{' before function body.");
+        Stmt* body = parse_block(parser);
+        
+        return create_function_stmt(name, return_type, NULL, NULL, 0, body);
+    }
+    
+    // Regular function declaration
+    Token* parameters = NULL;
+    DataType* param_types = NULL;
+    int param_count = 0;
+    
+    if (!check(parser, TOKEN_RPAREN)) {
+        do {
+            if (param_count >= 255) {
+                parser_error_at_current(parser, "Cannot have more than 255 parameters.");
+            }
+            
+            DataType param_type = parse_type(parser);
+            Token param_name = parser->current;
+            consume(parser, TOKEN_IDENTIFIER, "Expect parameter name.");
+            
+            parameters = realloc(parameters, sizeof(Token) * (param_count + 1));
+            param_types = realloc(param_types, sizeof(DataType) * (param_count + 1));
+            
+            parameters[param_count] = param_name;
+            param_types[param_count] = param_type;
+            param_count++;
+        } while (match(parser, TOKEN_COMMA));
+    }
+    
+    consume(parser, TOKEN_RPAREN, "Expect ')' after parameters.");
+    consume(parser, TOKEN_LBRACE, "Expect '{' before function body.");
+    Stmt* body = parse_block(parser);
+    
+    return create_function_stmt(name, return_type, parameters, param_types, param_count, body);
 }
 
 void parser_init(Parser* parser, Lexer* lexer) {
@@ -502,4 +543,8 @@ void parser_error_at_previous(Parser* parser, const char* message) {
             parser->previous.line,
             parser->previous.lexeme,
             message);
+}
+
+static Stmt* statement(Parser* parser) {
+    return parse_statement(parser);
 } 
