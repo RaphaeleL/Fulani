@@ -2,6 +2,8 @@
 
 Fulani is a simple C-like programming language with a straightforward syntax, designed for educational purposes. It includes essential programming constructs like variables, functions, conditions, and loops. **Fulani is Turing complete**, meaning it can simulate any Turing machine and therefore compute anything that is computable.
 
+<img src="assets/proof_rule110_turing.png" />
+
 ## Building and Running
 
 To build the Fulani interpreter:
