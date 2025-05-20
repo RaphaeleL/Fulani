@@ -33,6 +33,12 @@ Fulani's Turing completeness has been demonstrated through implementations of:
 
 These examples can be found in the `proofs/` directory.
 
+Some Explanations, why the Rule 110 is a Proof for Turing Completness can be found below.
+
+- [Wikipedia](https://en.wikipedia.org/wiki/Rule_110)
+- [Stackoverflow](https://stackoverflow.com/questions/14791807/can-someone-explain-rule-110-in-the-simplest-way-possible)
+- [Stackexchange](https://cs.stackexchange.com/questions/4779/how-is-the-rule-110-turing-complete)
+
 ## Library System
 
 Fulani supports a library inclusion system, allowing you to organize and reuse code. To include a library in your program:
