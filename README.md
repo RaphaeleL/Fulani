@@ -260,6 +260,21 @@ Potential enhancements for the language include:
 - User-defined types/structures
 - Improved error handling and diagnostics
 
+## Benchmark
+
+> Each Language is tested with the same Rule110 implementation on the same Machine 
+
+| Language                                      | Time (s) | Tested with | Note              |
+|-----------------------------------------------|----------|-------------|-------------------|
+| [ris](https://github.com/RaphaeleL/ris)       | 0.294s   | Rule110     | `--run`           |
+| [ris](https://github.com/RaphaeleL/ris)       | 0.008s   | Rule110     | build and run     |
+| [fulani](https://github.com/RaphaeleL/fulani) | 0.323s   | Rule110     |                   |
+| Python                                        | 0.025s   | Rule110     | v3.13             |
+| C                                             | 0.003s   | Rule110     | no `-O3`          |
+| C++                                           | 0.205s   | Rule110     | no `-O3`          |
+| Go                                            | 0.224s   | Rule110     |                   |
+| Go                                            | 0.014s   | Rule110     | build and run     |
+
 ## License
 
 This project is available for educational purposes.
