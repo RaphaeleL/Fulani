@@ -98,13 +98,13 @@ int main(int argc, const char* argv[]) {
         } else if (script_path == NULL) {
             script_path = argv[i];
         } else {
-            fprintf(stderr, "Usage: ownlang [--debug] script\n");
+            fprintf(stderr, "Usage: fulani [--debug] script\n");
             exit(64);
         }
     }
     
     if (script_path == NULL) {
-        fprintf(stderr, "Usage: ownlang [--debug] script\n");
+        fprintf(stderr, "Usage: fulani [--debug] script\n");
         exit(64);
     }
     

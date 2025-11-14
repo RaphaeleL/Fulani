@@ -1195,7 +1195,7 @@ static void process_include(Interpreter* interpreter, const char* path) {
     }
     
     // Save the current environment
-    Environment* previous = interpreter->environment;
+    // Environment* previous = interpreter->environment;
     
     // Execute each statement in the included file
     for (int i = 0; i < count; i++) {

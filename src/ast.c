@@ -20,41 +20,41 @@ static const char* datatype_to_string(DataType type) {
     }
 }
 
-static const char* token_type_to_string(TokenType type) {
-    switch (type) {
-        case TOKEN_INT: return "INT";
-        case TOKEN_FLOAT: return "FLOAT";
-        case TOKEN_STRING: return "STRING";
-        case TOKEN_VOID: return "VOID";
-        case TOKEN_PLUS: return "+";
-        case TOKEN_MINUS: return "-";
-        case TOKEN_MULTIPLY: return "*";
-        case TOKEN_DIVIDE: return "/";
-        case TOKEN_EQUALS: return "==";
-        case TOKEN_NOT_EQUALS: return "!=";
-        case TOKEN_LESS: return "<";
-        case TOKEN_LESS_EQUAL: return "<=";
-        case TOKEN_GREATER: return ">";
-        case TOKEN_GREATER_EQUAL: return ">=";
-        case TOKEN_ASSIGN: return "=";
-        case TOKEN_COMMA: return ",";
-        case TOKEN_SEMICOLON: return ";";
-        case TOKEN_LPAREN: return "(";
-        case TOKEN_RPAREN: return ")";
-        case TOKEN_LBRACE: return "{";
-        case TOKEN_RBRACE: return "}";
-        case TOKEN_IDENTIFIER: return "IDENTIFIER";
-        case TOKEN_INTEGER_LITERAL: return "INTEGER";
-        case TOKEN_FLOAT_LITERAL: return "FLOAT";
-        case TOKEN_STRING_LITERAL: return "STRING";
-        case TOKEN_IF: return "if";
-        case TOKEN_ELSE: return "else";
-        case TOKEN_WHILE: return "while";
-        case TOKEN_RETURN: return "return";
-        case TOKEN_EOF: return "EOF";
-        default: return "UNKNOWN";
-    }
-}
+// static const char* token_type_to_string(TokenType type) {
+//     switch (type) {
+//         case TOKEN_INT: return "INT";
+//         case TOKEN_FLOAT: return "FLOAT";
+//         case TOKEN_STRING: return "STRING";
+//         case TOKEN_VOID: return "VOID";
+//         case TOKEN_PLUS: return "+";
+//         case TOKEN_MINUS: return "-";
+//         case TOKEN_MULTIPLY: return "*";
+//         case TOKEN_DIVIDE: return "/";
+//         case TOKEN_EQUALS: return "==";
+//         case TOKEN_NOT_EQUALS: return "!=";
+//         case TOKEN_LESS: return "<";
+//         case TOKEN_LESS_EQUAL: return "<=";
+//         case TOKEN_GREATER: return ">";
+//         case TOKEN_GREATER_EQUAL: return ">=";
+//         case TOKEN_ASSIGN: return "=";
+//         case TOKEN_COMMA: return ",";
+//         case TOKEN_SEMICOLON: return ";";
+//         case TOKEN_LPAREN: return "(";
+//         case TOKEN_RPAREN: return ")";
+//         case TOKEN_LBRACE: return "{";
+//         case TOKEN_RBRACE: return "}";
+//         case TOKEN_IDENTIFIER: return "IDENTIFIER";
+//         case TOKEN_INTEGER_LITERAL: return "INTEGER";
+//         case TOKEN_FLOAT_LITERAL: return "FLOAT";
+//         case TOKEN_STRING_LITERAL: return "STRING";
+//         case TOKEN_IF: return "if";
+//         case TOKEN_ELSE: return "else";
+//         case TOKEN_WHILE: return "while";
+//         case TOKEN_RETURN: return "return";
+//         case TOKEN_EOF: return "EOF";
+//         default: return "UNKNOWN";
+//     }
+// }
 
 void print_expr(Expr* expr, int indent) {
     if (expr == NULL) {
@@ -157,6 +157,11 @@ void print_stmt(Stmt* stmt, int indent) {
             print_indent(indent);
             printf("Expression:\n");
             print_expr(stmt->as.expression, indent + 1);
+            break;
+        }
+        case STMT_INCLUDE: {
+            print_indent(indent);
+            printf("Include(%s)\n", stmt->as.include.path.lexeme);
             break;
         }
         case STMT_VAR_DECL: {
@@ -458,6 +463,9 @@ void free_stmt(Stmt* stmt) {
     switch (stmt->type) {
         case STMT_EXPRESSION:
             free_expr(stmt->as.expression);
+            break;
+        case STMT_INCLUDE:
+            // No dynamic memory to free in include statement
             break;
         case STMT_VAR_DECL:
             free_expr(stmt->as.var_decl.initializer);

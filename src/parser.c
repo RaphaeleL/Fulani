@@ -4,6 +4,9 @@
 #include <string.h>
 #include "headers/parser.h"
 
+// #define SHL_IMPLEMENTATION
+// #include "../build.h"
+
 // Forward declarations
 static Expr* parse_expression(Parser* parser);
 static Expr* parse_equality(Parser* parser);
@@ -21,16 +24,16 @@ static Stmt* parse_while_statement(Parser* parser);
 static Stmt* parse_return_statement(Parser* parser);
 static Stmt* parse_for_statement(Parser* parser);
 static Stmt* statement(Parser* parser);
-static Stmt* declaration(Parser* parser);
+// static Stmt* declaration(Parser* parser);
 static Stmt* var_declaration(Parser* parser, DataType type, Token name);
 static Stmt* function_declaration(Parser* parser, DataType return_type, Token name);
-static Stmt* expression_statement(Parser* parser);
-static Stmt* block_statement(Parser* parser);
-static Stmt* if_statement(Parser* parser);
-static Stmt* while_statement(Parser* parser);
-static Stmt* for_statement(Parser* parser);
-static Stmt* return_statement(Parser* parser);
-static Stmt* include_statement(Parser* parser);
+// static Stmt* expression_statement(Parser* parser);
+// static Stmt* block_statement(Parser* parser);
+// static Stmt* if_statement(Parser* parser);
+// static Stmt* while_statement(Parser* parser);
+// static Stmt* for_statement(Parser* parser);
+// static Stmt* return_statement(Parser* parser);
+// static Stmt* include_statement(Parser* parser);
 
 static void advance(Parser* parser) {
     parser->previous = parser->current;
@@ -135,6 +138,7 @@ static Expr* finish_variable(Parser* parser, Expr* expr) {
     // Handle list methods/properties: list.add(item), list.remove(index), list.length
     else if (match(parser, TOKEN_DOT)) {
         Token name = parser->current;
+        (void)name;
         
         if (match(parser, TOKEN_ADD)) {
             consume(parser, TOKEN_LPAREN, "Expect '(' after list.add.");
